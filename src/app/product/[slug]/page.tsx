@@ -14,11 +14,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createAdminClient()
   const { data } = await supabase
     .from('products')
-    .select('name, short_description')
+    .select('title, description')
     .eq('slug', slug)
     .single()
   if (!data) return {}
-  return { title: data.name, description: data.short_description ?? undefined }
+  return {
+    title: `${data.title} | Peak Medical Wholesale`,
+    description: data.description?.slice(0, 160) ?? undefined,
+  }
 }
 
 export default async function ProductPage({ params }: Props) {
@@ -27,7 +30,7 @@ export default async function ProductPage({ params }: Props) {
 
   const { data: product } = await supabase
     .from('products')
-    .select('*, category:categories(*), brand:brands(*)')
+    .select('*, category:categories(*), images:product_images(id,url,sort_order)')
     .eq('slug', slug)
     .single()
 
@@ -35,8 +38,9 @@ export default async function ProductPage({ params }: Props) {
 
   const { data: related } = await supabase
     .from('products')
-    .select('*, category:categories(*), brand:brands(*)')
+    .select('*, category:categories(*), images:product_images(id,url,sort_order)')
     .eq('category_id', product.category_id)
+    .eq('is_active', true)
     .neq('id', product.id)
     .limit(4)
 

@@ -8,10 +8,9 @@ import { buttonVariants } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  processing: 'bg-blue-100 text-blue-800',
+  pending_csr: 'bg-yellow-100 text-yellow-800',
+  confirmed: 'bg-blue-100 text-blue-800',
   shipped: 'bg-purple-100 text-purple-800',
-  delivered: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
 }
 
@@ -53,24 +52,20 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               {(order.items as OrderItem[]).map(item => (
                 <div key={item.id} className="flex gap-3">
                   <div className="relative w-16 h-16 flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden">
-                    {item.product_image ? (
-                      <Image src={item.product_image} alt={item.product_name} fill className="object-contain p-1" />
-                    ) : (
-                      <div className="absolute inset-0 bg-gray-100" />
-                    )}
+                    <div className="absolute inset-0 bg-gray-100" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 line-clamp-2">{item.product_name}</p>
+                    <p className="text-sm font-medium text-gray-800 line-clamp-2">{item.title}</p>
                     <p className="text-xs text-gray-500 mt-0.5">Qty: {item.quantity} × {formatPrice(item.unit_price)}</p>
                   </div>
-                  <p className="font-semibold text-sm text-gray-800 flex-shrink-0">{formatPrice(item.total_price)}</p>
+                  <p className="font-semibold text-sm text-gray-800 flex-shrink-0">{formatPrice(item.unit_price * item.quantity)}</p>
                 </div>
               ))}
             </div>
             <Separator className="my-4" />
             <div className="flex justify-between font-bold text-gray-900">
               <span>Total</span>
-              <span>{formatPrice(order.total)}</span>
+              <span>{formatPrice(order.subtotal)}</span>
             </div>
           </div>
 

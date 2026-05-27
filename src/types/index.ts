@@ -1,39 +1,45 @@
 export interface Category {
   id: string
-  name: string
   slug: string
-  parent_id: string | null
+  name: string
   description: string | null
-  image_url: string | null
+  parent_id: string | null
+  sort_order: number
   created_at: string
 }
 
-export interface Brand {
+export interface PriceTier {
+  minQ: number
+  maxQ: number
+  price: number
+}
+
+export interface ProductImage {
   id: string
-  name: string
-  slug: string
-  created_at: string
+  product_id: string
+  url: string
+  sort_order: number
 }
 
 export interface Product {
   id: string
-  name: string
   slug: string
+  title: string
   description: string | null
-  short_description: string | null
-  price: number
-  sale_price: number | null
-  sku: string | null
-  stock_quantity: number | null
-  is_in_stock: boolean
   category_id: string | null
-  brand_id: string | null
-  images: string[]
-  featured: boolean
+  sku: string | null
+  variant_product_id: number | null
+  base_price: number
+  price_tiers: PriceTier[]
+  currency: string
+  rating: number
+  review_count: number
+  is_active: boolean
+  is_featured: boolean
   created_at: string
   updated_at: string
   category?: Category
-  brand?: Brand
+  images?: ProductImage[]
 }
 
 export interface CartItem {
@@ -43,23 +49,17 @@ export interface CartItem {
   product: Product
 }
 
-export interface WishlistItem {
-  id: string
-  product_id: string
-  user_id: string
-  created_at: string
-  product: Product
-}
-
 export interface Order {
   id: string
-  user_id: string
-  reference_number: string
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
-  subtotal: number
-  total: number
+  user_id: string | null
+  reference_number: string | null
+  status: 'pending_csr' | 'confirmed' | 'shipped' | 'cancelled'
+  email: string
+  full_name: string
+  phone: string | null
   shipping_address: ShippingAddress
-  notes: string | null
+  customer_notes: string | null
+  subtotal: number
   created_at: string
   updated_at: string
   items?: OrderItem[]
@@ -68,12 +68,10 @@ export interface Order {
 export interface OrderItem {
   id: string
   order_id: string
-  product_id: string
-  product_name: string
-  product_image: string | null
+  product_id: string | null
+  title: string
   quantity: number
   unit_price: number
-  total_price: number
 }
 
 export interface ShippingAddress {
@@ -91,31 +89,29 @@ export interface ShippingAddress {
 
 export interface Profile {
   id: string
-  email: string
-  first_name: string | null
-  last_name: string | null
-  company: string | null
+  email: string | null
+  full_name: string | null
   phone: string | null
-  license_number: string | null
+  company: string | null
+  role: 'customer' | 'admin'
   created_at: string
 }
 
 export interface BlogPost {
   id: string
-  title: string
   slug: string
+  title: string
   excerpt: string | null
-  content: string
-  image_url: string | null
-  published: boolean
+  body: string
+  published_at: string | null
+  is_published: boolean
   created_at: string
 }
 
-export type SortOption = 'popularity' | 'latest' | 'price_asc' | 'price_desc'
+export type SortOption = 'latest' | 'price_asc' | 'price_desc'
 
 export interface ShopFilters {
   category?: string
-  brand?: string
   min_price?: number
   max_price?: number
   search?: string

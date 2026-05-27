@@ -2,20 +2,18 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { Brand, Category } from '@/types'
+import { Category } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { X } from 'lucide-react'
 
 interface Props {
-  brands: Brand[]
   categories: Category[]
   currentParams: Record<string, string | undefined>
 }
 
-export default function ShopFilters({ brands, categories, currentParams }: Props) {
+export default function ShopFilters({ categories, currentParams }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const [minPrice, setMinPrice] = useState(currentParams.min_price ?? '')
@@ -57,7 +55,7 @@ export default function ShopFilters({ brands, categories, currentParams }: Props
 
       {/* Price range */}
       <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Price Range</h3>
+        <h3 className="text-sm font-medium text-gray-700 mb-3">Price Range (USD)</h3>
         <div className="flex gap-2 mb-2">
           <Input
             type="number"
@@ -84,40 +82,18 @@ export default function ShopFilters({ brands, categories, currentParams }: Props
       {/* Categories */}
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-3">Category</h3>
-        <div className="space-y-1.5 max-h-48 overflow-y-auto">
+        <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
           {categories.map(cat => (
             <button
               key={cat.id}
               onClick={() => router.push(buildUrl({
                 category: currentParams.category === cat.slug ? undefined : cat.slug
               }))}
-              className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-gray-50 transition-colors ${
+              className={`w-full text-left text-sm px-2 py-1.5 rounded hover:bg-gray-50 transition-colors ${
                 currentParams.category === cat.slug ? 'text-[#1a3a5c] font-medium bg-blue-50' : 'text-gray-600'
               }`}
             >
               {cat.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Brands */}
-      <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Brand</h3>
-        <div className="space-y-1.5 max-h-48 overflow-y-auto">
-          {brands.map(brand => (
-            <button
-              key={brand.id}
-              onClick={() => router.push(buildUrl({
-                brand: currentParams.brand === brand.slug ? undefined : brand.slug
-              }))}
-              className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-gray-50 transition-colors ${
-                currentParams.brand === brand.slug ? 'text-[#1a3a5c] font-medium bg-blue-50' : 'text-gray-600'
-              }`}
-            >
-              {brand.name}
             </button>
           ))}
         </div>

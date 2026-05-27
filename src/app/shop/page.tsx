@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/server'
-import { Product, Brand, Category } from '@/types'
+import { Product, Category } from '@/types'
 import ProductCard from '@/components/products/ProductCard'
 import ShopFilters from '@/components/products/ShopFilters'
 import ShopSort from '@/components/products/ShopSort'
@@ -18,7 +18,6 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   const params = await searchParams
   const search = getString(params.search)
   const category = getString(params.category)
-  const brand = getString(params.brand)
   const min_price = getString(params.min_price)
   const max_price = getString(params.max_price)
   const sort = getString(params.sort) ?? 'latest'
@@ -28,10 +27,11 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
 
   let query = supabase
     .from('products')
-    .select('*, category:categories(*), brand:brands(*)', { count: 'exact' })
+    .select('*, category:categories(*), images:product_images(id,url,sort_order)', { count: 'exact' })
+    .eq('is_active', true)
 
   if (search) {
-    query = query.ilike('name', `%${search}%`)
+    query = query.ilike('title', `%${search}%`)
   }
   if (category) {
     const { data: cat } = await supabase
@@ -41,20 +41,12 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
       .single()
     if (cat) query = query.eq('category_id', cat.id)
   }
-  if (brand) {
-    const { data: br } = await supabase
-      .from('brands')
-      .select('id')
-      .eq('slug', brand)
-      .single()
-    if (br) query = query.eq('brand_id', br.id)
-  }
-  if (min_price) query = query.gte('price', parseFloat(min_price))
-  if (max_price) query = query.lte('price', parseFloat(max_price))
+  if (min_price) query = query.gte('base_price', parseFloat(min_price))
+  if (max_price) query = query.lte('base_price', parseFloat(max_price))
 
   switch (sort) {
-    case 'price_asc': query = query.order('price', { ascending: true }); break
-    case 'price_desc': query = query.order('price', { ascending: false }); break
+    case 'price_asc': query = query.order('base_price', { ascending: true }); break
+    case 'price_desc': query = query.order('base_price', { ascending: false }); break
     default: query = query.order('created_at', { ascending: false })
   }
 
@@ -64,13 +56,13 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   const { data: products, count } = await query
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
 
-  const [{ data: brands }, { data: categories }] = await Promise.all([
-    supabase.from('brands').select('*').order('name'),
-    supabase.from('categories').select('*').order('name'),
-  ])
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('*')
+    .order('sort_order')
 
   const currentParams: Record<string, string | undefined> = {
-    search, category, brand, min_price, max_price, sort,
+    search, category, min_price, max_price, sort,
     page: page > 1 ? String(page) : undefined,
   }
 
@@ -86,7 +78,6 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
       <div className="flex flex-col lg:flex-row gap-6">
         <aside className="w-full lg:w-64 flex-shrink-0">
           <ShopFilters
-            brands={(brands as Brand[]) ?? []}
             categories={(categories as Category[]) ?? []}
             currentParams={currentParams}
           />
@@ -95,7 +86,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
         <div className="flex-1">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-gray-500">
-              Showing {from + 1}–{Math.min(from + PAGE_SIZE, count ?? 0)} of {count ?? 0} results
+              Showing {Math.min(from + 1, count ?? 0)}–{Math.min(from + PAGE_SIZE, count ?? 0)} of {count ?? 0} results
             </p>
             <ShopSort currentSort={sort} />
           </div>

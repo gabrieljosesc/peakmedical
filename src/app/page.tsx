@@ -7,27 +7,30 @@ import { cn } from '@/lib/utils'
 import { ShieldCheck, Truck, HeadphonesIcon, Award } from 'lucide-react'
 
 const categories = [
-  { name: 'Cosmetic', slug: 'cosmetic', description: 'Fillers, Botox, Threads & more', color: 'bg-pink-50 border-pink-100' },
-  { name: 'Mesotherapy', slug: 'mesotherapy', description: 'Vitamin cocktails & skin boosters', color: 'bg-purple-50 border-purple-100' },
-  { name: 'Orthopedic', slug: 'orthopedic', description: 'Joint & spine injectables', color: 'bg-blue-50 border-blue-100' },
-  { name: 'Gynecology', slug: 'gynecology', description: 'Specialized gynecological products', color: 'bg-rose-50 border-rose-100' },
-  { name: 'Ophthalmology', slug: 'ophthalmology', description: 'Eye care medications', color: 'bg-cyan-50 border-cyan-100' },
-  { name: 'Rheumatology', slug: 'rheumatology', description: 'Arthritis & autoimmune treatments', color: 'bg-green-50 border-green-100' },
+  { name: 'Dermal Fillers', slug: 'dermal-fillers', description: 'HA & collagen fillers', color: 'bg-pink-50 border-pink-100' },
+  { name: 'Botulinum Toxins', slug: 'botulinum-toxins', description: 'Botox & neuromodulators', color: 'bg-purple-50 border-purple-100' },
+  { name: 'Peptides', slug: 'peptides', description: 'Research-grade peptides', color: 'bg-blue-50 border-blue-100' },
+  { name: 'Mesotherapy', slug: 'mesotherapy', description: 'Skin-quality solutions', color: 'bg-cyan-50 border-cyan-100' },
+  { name: 'Orthopedic Injections', slug: 'orthopedic-injections', description: 'Joint-care injectables', color: 'bg-green-50 border-green-100' },
+  { name: 'Weight Loss', slug: 'weight-loss', description: 'GLP-1 & anti-obesity', color: 'bg-orange-50 border-orange-100' },
+  { name: 'Threads', slug: 'threads', description: 'PDO lifting threads', color: 'bg-rose-50 border-rose-100' },
+  { name: 'Skincare', slug: 'skincare', description: 'Professional skincare', color: 'bg-yellow-50 border-yellow-100' },
 ]
 
 const trustFeatures = [
   { icon: ShieldCheck, title: 'Authentic Products', desc: 'All products are guaranteed legit and authentic from trusted manufacturers.' },
-  { icon: Truck, title: 'Free Shipping', desc: 'Complimentary shipping on all orders over $250.' },
+  { icon: Truck, title: 'Fast Shipping', desc: 'Complimentary shipping on all orders over $250.' },
   { icon: HeadphonesIcon, title: '24/7 Support', desc: 'Our customer service team is ready to assist you anytime.' },
-  { icon: Award, title: 'Since 2012', desc: 'Over a decade of trusted service to medical professionals worldwide.' },
+  { icon: Award, title: 'Trusted Since 2012', desc: 'Over a decade of trusted service to medical professionals worldwide.' },
 ]
 
 export default async function HomePage() {
   const supabase = createAdminClient()
   const { data: featured } = await supabase
     .from('products')
-    .select('*, category:categories(*), brand:brands(*)')
-    .eq('featured', true)
+    .select('*, category:categories(*), images:product_images(id,url,sort_order)')
+    .eq('is_featured', true)
+    .eq('is_active', true)
     .limit(8)
 
   return (
@@ -40,7 +43,7 @@ export default async function HomePage() {
             Premium Medical Supplies<br />at Wholesale Prices
           </h1>
           <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
-            Dermal fillers, botulinum toxins, orthopedic, and more — sourced from trusted manufacturers and delivered to your clinic.
+            Dermal fillers, botulinum toxins, peptides, orthopedic injectables, and more — sourced from trusted manufacturers and delivered to your clinic.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link href="/shop" className={cn(buttonVariants({ size: 'lg' }), 'bg-white text-[#1a3a5c] hover:bg-gray-100 font-semibold')}>
@@ -74,12 +77,12 @@ export default async function HomePage() {
           <h2 className="text-2xl font-bold text-gray-800">Shop by Category</h2>
           <Link href="/shop" className="text-sm text-[#1a3a5c] hover:underline font-medium">View all →</Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
           {categories.map(cat => (
             <Link key={cat.slug} href={`/shop/${cat.slug}`}
-              className={`rounded-xl border p-4 text-center hover:shadow-md transition-shadow ${cat.color}`}>
-              <h3 className="font-semibold text-gray-800 text-sm mb-1">{cat.name}</h3>
-              <p className="text-xs text-gray-500">{cat.description}</p>
+              className={`rounded-xl border p-3 text-center hover:shadow-md transition-shadow ${cat.color}`}>
+              <h3 className="font-semibold text-gray-800 text-xs mb-1">{cat.name}</h3>
+              <p className="text-xs text-gray-500 hidden sm:block">{cat.description}</p>
             </Link>
           ))}
         </div>

@@ -79,9 +79,11 @@ export default function CheckoutPage() {
         .insert({
           user_id: user?.id ?? null,
           reference_number: ref,
-          status: 'pending',
+          status: 'pending_csr',
           subtotal: total,
-          total: total,
+          email: form.email,
+          full_name: `${form.first_name} ${form.last_name}`,
+          phone: form.phone || null,
           shipping_address: {
             first_name: form.first_name,
             last_name: form.last_name,
@@ -94,9 +96,7 @@ export default function CheckoutPage() {
             country: form.country,
             phone: form.phone,
           },
-          notes: form.notes || null,
-          customer_email: form.email,
-          customer_name: `${form.first_name} ${form.last_name}`,
+          customer_notes: form.notes || null,
         })
         .select()
         .single()
@@ -107,17 +107,16 @@ export default function CheckoutPage() {
         items.map(item => ({
           order_id: order.id,
           product_id: item.product_id,
-          product_name: item.product.name,
-          product_image: item.product.images?.[0] ?? null,
+          title: item.product.title,
           quantity: item.quantity,
-          unit_price: item.product.sale_price ?? item.product.price,
-          total_price: (item.product.sale_price ?? item.product.price) * item.quantity,
+          unit_price: item.product.base_price,
         }))
       )
 
       clearCart()
       router.push(`/order-confirmed?ref=${ref}`)
-    } catch {
+    } catch (err) {
+      console.error(err)
       toast.error('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
@@ -205,9 +204,9 @@ export default function CheckoutPage() {
               <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
                 {items.map(item => (
                   <div key={item.id} className="flex justify-between text-sm gap-2">
-                    <span className="text-gray-600 line-clamp-2">{item.product.name} × {item.quantity}</span>
+                    <span className="text-gray-600 line-clamp-2">{item.product.title} × {item.quantity}</span>
                     <span className="font-medium flex-shrink-0">
-                      {formatPrice((item.product.sale_price ?? item.product.price) * item.quantity)}
+                      {formatPrice(item.product.base_price * item.quantity)}
                     </span>
                   </div>
                 ))}

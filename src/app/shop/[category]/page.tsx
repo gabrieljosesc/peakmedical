@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createAdminClient()
   const { data } = await supabase.from('categories').select('name').eq('slug', category).single()
   if (!data) return {}
-  return { title: `${data.name} Products` }
+  return { title: `${data.name} | Peak Medical Wholesale` }
 }
 
 export default async function CategoryPage({ params, searchParams }: Props) {
@@ -45,17 +45,18 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   let catIds = [category.id]
   if (subcategories && subcategories.length > 0) {
-    catIds = [category.id, ...subcategories.map(s => s.id)]
+    catIds = [category.id, ...subcategories.map((s: { id: string }) => s.id)]
   }
 
   let query = supabase
     .from('products')
-    .select('*, category:categories(*), brand:brands(*)', { count: 'exact' })
+    .select('*, category:categories(*), images:product_images(id,url,sort_order)', { count: 'exact' })
     .in('category_id', catIds)
+    .eq('is_active', true)
 
   switch (sort) {
-    case 'price_asc': query = query.order('price', { ascending: true }); break
-    case 'price_desc': query = query.order('price', { ascending: false }); break
+    case 'price_asc': query = query.order('base_price', { ascending: true }); break
+    case 'price_desc': query = query.order('base_price', { ascending: false }); break
     default: query = query.order('created_at', { ascending: false })
   }
 
@@ -76,16 +77,19 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">{category.name}</h1>
-        <p className="text-sm text-gray-500 mt-1">{count ?? 0} products</p>
+        {category.description && (
+          <p className="text-sm text-gray-500 mt-1">{category.description}</p>
+        )}
+        <p className="text-sm text-gray-400 mt-1">{count ?? 0} products</p>
       </div>
 
       {/* Subcategory pills */}
       {subcategories && subcategories.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
-          {subcategories.map(sub => (
+          {subcategories.map((sub: { id: string; slug: string; name: string }) => (
             <Link
               key={sub.id}
-              href={`/shop/${slug}/${sub.slug.replace(`${slug}-`, '')}`}
+              href={`/shop/${sub.slug}`}
               className="text-sm px-3 py-1.5 rounded-full border bg-white hover:bg-[#1a3a5c] hover:text-white hover:border-[#1a3a5c] transition-colors"
             >
               {sub.name}
@@ -96,7 +100,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-gray-500">
-          Showing {from + 1}–{Math.min(from + PAGE_SIZE, count ?? 0)} of {count ?? 0}
+          Showing {Math.min(from + 1, count ?? 0)}–{Math.min(from + PAGE_SIZE, count ?? 0)} of {count ?? 0}
         </p>
         <ShopSort currentSort={sort} />
       </div>

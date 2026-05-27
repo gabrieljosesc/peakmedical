@@ -8,10 +8,9 @@ import { cn } from '@/lib/utils'
 import { Package } from 'lucide-react'
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  processing: 'bg-blue-100 text-blue-800',
+  pending_csr: 'bg-yellow-100 text-yellow-800',
+  confirmed: 'bg-blue-100 text-blue-800',
   shipped: 'bg-purple-100 text-purple-800',
-  delivered: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
 }
 
@@ -65,7 +64,7 @@ export default async function OrdersPage() {
                   <span className={`text-xs font-medium px-2.5 py-1 rounded-full capitalize ${statusColors[order.status]}`}>
                     {order.status}
                   </span>
-                  <span className="font-bold text-gray-800">{formatPrice(order.total)}</span>
+                  <span className="font-bold text-gray-800">{formatPrice(order.subtotal)}</span>
                 </div>
               </div>
             </Link>

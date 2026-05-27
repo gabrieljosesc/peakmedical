@@ -34,12 +34,12 @@ export default function CartPage() {
         {/* Items */}
         <div className="lg:col-span-2 space-y-3">
           {items.map(item => {
-            const price = item.product.sale_price ?? item.product.price
+            const imageUrl = item.product.images?.[0]?.url ?? null
             return (
               <div key={item.id} className="bg-white rounded-lg border p-4 flex gap-4">
                 <div className="relative w-20 h-20 flex-shrink-0 bg-gray-50 rounded-md overflow-hidden">
-                  {item.product.images?.[0] ? (
-                    <Image src={item.product.images[0]} alt={item.product.name} fill className="object-contain p-2" />
+                  {imageUrl ? (
+                    <Image src={imageUrl} alt={item.product.title} fill className="object-contain p-2" />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-gray-200">
                       <ShoppingCart className="w-8 h-8" />
@@ -48,10 +48,10 @@ export default function CartPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <Link href={`/product/${item.product.slug}`} className="font-medium text-gray-800 hover:text-[#1a3a5c] line-clamp-2 text-sm">
-                    {item.product.name}
+                    {item.product.title}
                   </Link>
-                  {item.product.brand && (
-                    <p className="text-xs text-gray-400 mt-0.5">{item.product.brand.name}</p>
+                  {item.product.category && (
+                    <p className="text-xs text-gray-400 mt-0.5">{item.product.category.name}</p>
                   )}
                   <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center border rounded-md">
@@ -70,7 +70,7 @@ export default function CartPage() {
                       </button>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-semibold text-gray-800">{formatPrice(price * item.quantity)}</span>
+                      <span className="font-semibold text-gray-800">{formatPrice(item.product.base_price * item.quantity)}</span>
                       <button
                         onClick={() => removeFromCart(item.product_id)}
                         className="text-gray-400 hover:text-red-500 transition-colors"
