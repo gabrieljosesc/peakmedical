@@ -9,7 +9,9 @@
     "lint": "eslint",
     "seed:catalog": "node scripts/seed-catalog.mjs",
     "seed:peptides": "node scripts/seed-peptides.mjs",
-    "upload:images": "node scripts/upload-images.mjs"
+    "upload:images": "node scripts/upload-images.mjs",
+    "migrate:wp": "node scripts/migrate-wordpress.mjs",
+    "migrate:resets": "node scripts/send-password-resets.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
