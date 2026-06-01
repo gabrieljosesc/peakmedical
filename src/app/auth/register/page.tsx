@@ -1,114 +1,356 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useActionState, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
+import { Eye, EyeOff } from 'lucide-react'
+import { registerAction, type RegisterState } from '@/app/actions/auth'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 
-export default function RegisterPage() {
-  const router = useRouter()
-  const [form, setForm] = useState({
-    email: '', password: '', confirm_password: '',
-    first_name: '', last_name: '', company: '', phone: '',
-  })
-  const [loading, setLoading] = useState(false)
+// ── Helpers ────────────────────────────────────────────────────────────────
+function err(state: RegisterState, key: string): string | undefined {
+  if (!state || !('fieldErrors' in state)) return undefined
+  return state.fieldErrors?.[key]
+}
 
-  function set(field: string) {
-    return (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm(prev => ({ ...prev, [field]: e.target.value }))
-  }
+function val(state: RegisterState, key: string): string {
+  if (!state || !('values' in state)) return ''
+  return state.values?.[key] ?? ''
+}
 
-  async function handleRegister(e: React.FormEvent) {
-    e.preventDefault()
-    if (form.password !== form.confirm_password) {
-      toast.error('Passwords do not match')
-      return
-    }
-    if (form.password.length < 8) {
-      toast.error('Password must be at least 8 characters')
-      return
-    }
+function FieldError({ msg }: { msg?: string }) {
+  if (!msg) return null
+  return <p className="mt-1 text-xs text-red-600">{msg}</p>
+}
 
-    setLoading(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: {
-          first_name: form.first_name,
-          last_name: form.last_name,
-          company: form.company,
-          phone: form.phone,
-        },
-      },
-    })
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="border-b border-gray-200 pb-2 mb-4 mt-6">
+      <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{children}</h2>
+    </div>
+  )
+}
 
-    if (error) {
-      toast.error(error.message)
-    } else {
-      toast.success('Account created! Please check your email to verify.')
-      router.push('/auth/login')
-    }
-    setLoading(false)
-  }
+// ── Password field with show/hide toggle ────────────────────────────────────
+function PasswordInput({ name, label, required, defaultValue, error, placeholder }: {
+  name: string; label: string; required?: boolean
+  defaultValue?: string; error?: string; placeholder?: string
+}) {
+  const [show, setShow] = useState(false)
+  return (
+    <div>
+      <Label htmlFor={name}>
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      </Label>
+      <div className="relative mt-1">
+        <Input
+          id={name}
+          name={name}
+          type={show ? 'text' : 'password'}
+          defaultValue={defaultValue}
+          autoComplete={name === 'password' ? 'new-password' : 'new-password'}
+          className={`pr-10 ${error ? 'border-red-400 bg-red-50 focus-visible:ring-red-300' : ''}`}
+          placeholder={placeholder}
+        />
+        <button
+          type="button"
+          onClick={() => setShow(v => !v)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          aria-label={show ? 'Hide password' : 'Show password'}
+        >
+          {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+        </button>
+      </div>
+      <FieldError msg={error} />
+    </div>
+  )
+}
+
+// ── Select wrapper ─────────────────────────────────────────────────────────
+function SelectField({ name, label, required, defaultValue, error, children }: {
+  name: string; label: string; required?: boolean
+  defaultValue?: string; error?: string; children: React.ReactNode
+}) {
+  return (
+    <div>
+      <Label htmlFor={name}>
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      </Label>
+      <select
+        id={name}
+        name={name}
+        defaultValue={defaultValue ?? ''}
+        className={`mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c] bg-white ${
+          error ? 'border-red-400 bg-red-50' : 'border-input'
+        }`}
+      >
+        {children}
+      </select>
+      <FieldError msg={error} />
+    </div>
+  )
+}
+
+// ── Form ────────────────────────────────────────────────────────────────────
+function RegisterForm() {
+  const [state, action, pending] = useActionState(registerAction, null)
+
+  const globalError = state && 'error' in state ? state.error : null
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md bg-white rounded-xl border shadow-sm p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Create an account</h1>
-        <p className="text-sm text-gray-500 mb-6">For licensed medical professionals only</p>
+    <div className="min-h-[70vh] flex items-start justify-center px-4 py-12">
+      <div className="w-full max-w-2xl bg-white rounded-xl border shadow-sm p-8">
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">Create an Account</h1>
+        <p className="text-sm text-gray-500 mb-2">
+          For licensed medical professionals only. Fields marked <span className="text-red-500">*</span> are required.
+        </p>
+        <p className="text-xs text-gray-400 mb-6">
+          By registering you agree to our{' '}
+          <Link href="/legal/terms" className="text-[#1a3a5c] hover:underline">Terms of Service</Link>{' '}
+          and{' '}
+          <Link href="/legal/privacy" className="text-[#1a3a5c] hover:underline">Privacy Policy</Link>.
+        </p>
+
+        {globalError && (
+          <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {globalError}
+          </div>
+        )}
+
+        <form action={action} className="space-y-4" noValidate>
+
+          {/* ── Account ─────────────────────────────────────────────────── */}
+          <SectionHeading>Account</SectionHeading>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="first_name">First Name</Label>
-              <Input id="first_name" value={form.first_name} onChange={set('first_name')} required className="mt-1" />
+              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
+              <Input
+                id="email" name="email" type="email" autoComplete="email"
+                defaultValue={val(state, 'email')}
+                className={`mt-1 ${err(state, 'email') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'email')} />
             </div>
             <div>
-              <Label htmlFor="last_name">Last Name</Label>
-              <Input id="last_name" value={form.last_name} onChange={set('last_name')} required className="mt-1" />
+              <Label htmlFor="confirm_email">Confirm Email <span className="text-red-500">*</span></Label>
+              <Input
+                id="confirm_email" name="confirm_email" type="email" autoComplete="email"
+                defaultValue={val(state, 'confirm_email')}
+                className={`mt-1 ${err(state, 'confirm_email') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'confirm_email')} />
             </div>
           </div>
-          <div>
-            <Label htmlFor="company">Clinic / Company Name</Label>
-            <Input id="company" value={form.company} onChange={set('company')} className="mt-1" />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <PasswordInput
+              name="password" label="Password" required
+              defaultValue={val(state, 'password')}
+              error={err(state, 'password')}
+            />
+            <PasswordInput
+              name="confirm_password" label="Confirm Password" required
+              defaultValue={val(state, 'confirm_password')}
+              error={err(state, 'confirm_password')}
+            />
           </div>
-          <div>
-            <Label htmlFor="phone">Phone</Label>
-            <Input id="phone" type="tel" value={form.phone} onChange={set('phone')} className="mt-1" />
-          </div>
-          <div>
-            <Label htmlFor="email">Email address *</Label>
-            <Input id="email" type="email" value={form.email} onChange={set('email')} required className="mt-1" />
-          </div>
-          <div>
-            <Label htmlFor="password">Password *</Label>
-            <Input id="password" type="password" value={form.password} onChange={set('password')} required className="mt-1" />
-          </div>
-          <div>
-            <Label htmlFor="confirm_password">Confirm Password *</Label>
-            <Input id="confirm_password" type="password" value={form.confirm_password} onChange={set('confirm_password')} required className="mt-1" />
-          </div>
-          <p className="text-xs text-gray-400">
-            By registering you agree to our{' '}
-            <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link> and{' '}
-            <Link href="/terms" className="text-blue-600 hover:underline">Terms of Service</Link>.
+          <p className="text-xs text-gray-400 -mt-2">
+            At least 8 characters with 1 uppercase letter, 1 number, and 1 special character.
           </p>
-          <Button type="submit" disabled={loading} className="w-full bg-[#1a3a5c] hover:bg-[#152f4a]">
-            {loading ? 'Creating account...' : 'Create Account'}
+
+          {/* ── Contact Information ───────────────────────────────────── */}
+          <SectionHeading>Contact Information</SectionHeading>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <SelectField name="prefix" label="Prefix" defaultValue={val(state, 'prefix')} error={err(state, 'prefix')}>
+              <option value="">Select</option>
+              <option>Mr.</option>
+              <option>Mrs.</option>
+              <option>Ms.</option>
+              <option>Dr.</option>
+              <option>Prof.</option>
+            </SelectField>
+            <div>
+              <Label htmlFor="first_name">First Name <span className="text-red-500">*</span></Label>
+              <Input
+                id="first_name" name="first_name" autoComplete="given-name"
+                defaultValue={val(state, 'first_name')}
+                className={`mt-1 ${err(state, 'first_name') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'first_name')} />
+            </div>
+            <div>
+              <Label htmlFor="middle_name">Middle Name</Label>
+              <Input
+                id="middle_name" name="middle_name"
+                defaultValue={val(state, 'middle_name')}
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="last_name">Last Name <span className="text-red-500">*</span></Label>
+              <Input
+                id="last_name" name="last_name" autoComplete="family-name"
+                defaultValue={val(state, 'last_name')}
+                className={`mt-1 ${err(state, 'last_name') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'last_name')} />
+            </div>
+            <div>
+              <Label htmlFor="phone">Phone <span className="text-red-500">*</span></Label>
+              <Input
+                id="phone" name="phone" type="tel" autoComplete="tel"
+                defaultValue={val(state, 'phone')}
+                placeholder="+1 (555) 000-0000"
+                className={`mt-1 ${err(state, 'phone') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'phone')} />
+            </div>
+          </div>
+
+          {/* ── Professional Information ──────────────────────────────── */}
+          <SectionHeading>Professional Information</SectionHeading>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="company">Company / Clinic Name <span className="text-red-500">*</span></Label>
+              <Input
+                id="company" name="company" autoComplete="organization"
+                defaultValue={val(state, 'company')}
+                className={`mt-1 ${err(state, 'company') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'company')} />
+            </div>
+            <div>
+              <Label htmlFor="business_phone">Business Phone <span className="text-red-500">*</span></Label>
+              <Input
+                id="business_phone" name="business_phone" type="tel"
+                defaultValue={val(state, 'business_phone')}
+                placeholder="+1 (555) 000-0000"
+                className={`mt-1 ${err(state, 'business_phone') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'business_phone')} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="profession">Profession <span className="text-red-500">*</span></Label>
+              <Input
+                id="profession" name="profession"
+                defaultValue={val(state, 'profession')}
+                placeholder="e.g. Physician, Nurse Practitioner"
+                className={`mt-1 ${err(state, 'profession') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'profession')} />
+            </div>
+            <div>
+              <Label htmlFor="specialty">Specialty</Label>
+              <Input
+                id="specialty" name="specialty"
+                defaultValue={val(state, 'specialty')}
+                placeholder="e.g. Dermatology, Aesthetics"
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="license_number">License Number <span className="text-red-500">*</span></Label>
+              <Input
+                id="license_number" name="license_number" autoComplete="off"
+                defaultValue={val(state, 'license_number')}
+                className={`mt-1 ${err(state, 'license_number') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'license_number')} />
+            </div>
+            <div>
+              <Label htmlFor="license_expiry">License Expiry Date <span className="text-red-500">*</span></Label>
+              <Input
+                id="license_expiry" name="license_expiry" type="date"
+                defaultValue={val(state, 'license_expiry')}
+                className={`mt-1 ${err(state, 'license_expiry') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'license_expiry')} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="license_state">State / County Issued <span className="text-red-500">*</span></Label>
+              <Input
+                id="license_state" name="license_state"
+                defaultValue={val(state, 'license_state')}
+                placeholder="e.g. California, Ontario"
+                className={`mt-1 ${err(state, 'license_state') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'license_state')} />
+            </div>
+            <div>
+              <Label htmlFor="license_country">Country Issued <span className="text-red-500">*</span></Label>
+              <Input
+                id="license_country" name="license_country"
+                defaultValue={val(state, 'license_country')}
+                placeholder="e.g. United States, Canada"
+                className={`mt-1 ${err(state, 'license_country') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'license_country')} />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="website">Website</Label>
+            <Input
+              id="website" name="website" type="url" autoComplete="url"
+              defaultValue={val(state, 'website')}
+              placeholder="https://yourclinic.com (optional)"
+              className="mt-1"
+            />
+          </div>
+
+          {/* ── Agreement ─────────────────────────────────────────────── */}
+          <label className="flex items-start gap-2.5 pt-2 cursor-pointer">
+            <input
+              type="checkbox" required
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-[#1a3a5c] flex-shrink-0"
+            />
+            <span className="text-xs text-gray-600 leading-relaxed">
+              I confirm I am a licensed medical professional authorized to purchase regulated
+              medical / aesthetic supplies, and that my license information is accurate and current.
+            </span>
+          </label>
+
+          <Button
+            type="submit"
+            disabled={pending}
+            className="w-full bg-[#1a3a5c] hover:bg-[#152f4a] mt-2"
+          >
+            {pending ? 'Creating account…' : 'Create Account'}
           </Button>
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Already have an account?{' '}
-          <Link href="/auth/login" className="text-[#1a3a5c] font-medium hover:underline">Sign in</Link>
+          <Link href="/auth/login" className="text-[#1a3a5c] font-medium hover:underline">
+            Sign in
+          </Link>
         </p>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   )
 }

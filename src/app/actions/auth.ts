@@ -1,0 +1,142 @@
+'use server'
+
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { registerSchema, flattenErrors } from '@/app/auth/register/schema'
+
+// ── Types ─────────────────────────────────────────────────────────────────
+export type RegisterState =
+  | null
+  | { fieldErrors: Record<string, string>; values?: Record<string, string> }
+  | { error: string }
+
+export type LoginState =
+  | null
+  | { error: string }
+
+// ── Register ──────────────────────────────────────────────────────────────
+export async function registerAction(
+  _prev: RegisterState,
+  formData: FormData
+): Promise<RegisterState> {
+  const raw = {
+    email:           String(formData.get('email')           ?? ''),
+    confirm_email:   String(formData.get('confirm_email')   ?? ''),
+    password:        String(formData.get('password')        ?? ''),
+    confirm_password:String(formData.get('confirm_password')?? ''),
+    prefix:          String(formData.get('prefix')          ?? ''),
+    first_name:      String(formData.get('first_name')      ?? ''),
+    middle_name:     String(formData.get('middle_name')     ?? ''),
+    last_name:       String(formData.get('last_name')       ?? ''),
+    phone:           String(formData.get('phone')           ?? ''),
+    company:         String(formData.get('company')         ?? ''),
+    profession:      String(formData.get('profession')      ?? ''),
+    specialty:       String(formData.get('specialty')       ?? ''),
+    license_number:  String(formData.get('license_number')  ?? ''),
+    license_expiry:  String(formData.get('license_expiry')  ?? ''),
+    license_state:   String(formData.get('license_state')   ?? ''),
+    license_country: String(formData.get('license_country') ?? ''),
+    business_phone:  String(formData.get('business_phone')  ?? ''),
+    website:         String(formData.get('website')         ?? ''),
+  }
+
+  const parsed = registerSchema.safeParse(raw)
+  if (!parsed.success) {
+    return {
+      fieldErrors: flattenErrors(parsed.error),
+      values: { ...raw, password: '', confirm_password: '' },
+    }
+  }
+
+  const v = parsed.data
+  const fullName = [v.prefix, v.first_name, v.middle_name, v.last_name]
+    .filter(Boolean)
+    .join(' ')
+    .trim()
+
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.auth.signUp({
+    email: v.email,
+    password: v.password,
+    options: { data: { full_name: fullName } },
+  })
+
+  if (error) {
+    if (error.message?.toLowerCase().includes('already registered')) {
+      return { fieldErrors: { email: 'An account with this email already exists.' }, values: { ...raw, password: '', confirm_password: '' } }
+    }
+    return { error: error.message }
+  }
+
+  if (data.user) {
+    await supabase.from('profiles').upsert({
+      id:              data.user.id,
+      email:           v.email,
+      full_name:       fullName,
+      phone:           v.phone           || null,
+      company:         v.company         || null,
+      profession:      v.profession      || null,
+      specialty:       v.specialty       || null,
+      license_number:  v.license_number  || null,
+      license_expiry:  v.license_expiry  || null,
+      license_state:   v.license_state   || null,
+      license_country: v.license_country || null,
+      business_phone:  v.business_phone  || null,
+      website:         v.website         || null,
+      role:            'customer',
+    }, { onConflict: 'id' })
+  }
+
+  revalidatePath('/', 'layout')
+  redirect('/auth/login?registered=1')
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────
+export async function loginAction(
+  _prev: LoginState,
+  formData: FormData
+): Promise<LoginState> {
+  const email    = String(formData.get('email')    ?? '').trim()
+  const password = String(formData.get('password') ?? '')
+  const next     = String(formData.get('next')     ?? '/account')
+
+  if (!email || !password) return { error: 'Email and password are required.' }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+  if (error) {
+    if (/invalid login/i.test(error.message) || /invalid credentials/i.test(error.message)) {
+      return { error: 'Incorrect email or password.' }
+    }
+    if (/email not confirmed/i.test(error.message)) {
+      return { error: 'Please verify your email before signing in. Check your inbox.' }
+    }
+    return { error: error.message }
+  }
+
+  revalidatePath('/', 'layout')
+  redirect(next || '/account')
+}
+
+// ── Forgot password ───────────────────────────────────────────────────────
+export async function forgotPasswordAction(
+  _prev: { sent?: boolean; error?: string } | null,
+  formData: FormData
+): Promise<{ sent?: boolean; error?: string }> {
+  const email = String(formData.get('email') ?? '').trim()
+  if (!email) return { error: 'Email is required.' }
+
+  const supabase = await createClient()
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/auth/update-password`,
+  })
+
+  // Always return success — don't reveal whether email exists
+  if (error) console.error('resetPasswordForEmail:', error.message)
+  return { sent: true }
+}
