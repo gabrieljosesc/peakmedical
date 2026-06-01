@@ -39,6 +39,13 @@ export async function registerAction(
     license_country: String(formData.get('license_country') ?? ''),
     business_phone:  String(formData.get('business_phone')  ?? ''),
     website:         String(formData.get('website')         ?? ''),
+
+    // Delivery address
+    address_line1:   String(formData.get('address_line1')   ?? ''),
+    city:            String(formData.get('city')             ?? ''),
+    state:           String(formData.get('state')            ?? ''),
+    postal_code:     String(formData.get('postal_code')      ?? ''),
+    country:         String(formData.get('country')          ?? ''),
   }
 
   const parsed = registerSchema.safeParse(raw)
@@ -85,6 +92,11 @@ export async function registerAction(
       license_country: v.license_country || null,
       business_phone:  v.business_phone  || null,
       website:         v.website         || null,
+      address_line1:   v.address_line1   || null,
+      city:            v.city            || null,
+      state:           v.state           || null,
+      postal_code:     v.postal_code     || null,
+      country:         v.country         || null,
       role:            'customer',
     }, { onConflict: 'id' })
   }

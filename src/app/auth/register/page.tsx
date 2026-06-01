@@ -1,12 +1,14 @@
 'use client'
 
-import { Suspense, useActionState, useState } from 'react'
+import { Suspense, useActionState, useCallback, useState } from 'react'
 import Link from 'next/link'
 import { Eye, EyeOff } from 'lucide-react'
 import { registerAction, type RegisterState } from '@/app/actions/auth'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { AddressAutocomplete } from '@/components/AddressAutocomplete'
+import type { ParsedAddress } from '@/lib/parse-google-place'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function err(state: RegisterState, key: string): string | undefined {
@@ -95,6 +97,21 @@ function SelectField({ name, label, required, defaultValue, error, children }: {
 // ── Form ────────────────────────────────────────────────────────────────────
 function RegisterForm() {
   const [state, action, pending] = useActionState(registerAction, null)
+
+  // Controlled address fields so autocomplete can fill them
+  const [addressLine1, setAddressLine1] = useState(() => val(null, 'address_line1'))
+  const [city, setCity]               = useState(() => val(null, 'city'))
+  const [addrState, setAddrState]     = useState(() => val(null, 'state'))
+  const [postalCode, setPostalCode]   = useState(() => val(null, 'postal_code'))
+  const [country, setCountry]         = useState(() => val(null, 'country'))
+
+  const handleAddressSelect = useCallback((parsed: ParsedAddress) => {
+    setAddressLine1(parsed.line1)
+    setCity(parsed.city)
+    setAddrState(parsed.state)
+    setPostalCode(parsed.postalCode)
+    setCountry(parsed.country)
+  }, [])
 
   const globalError = state && 'error' in state ? state.error : null
 
@@ -211,6 +228,81 @@ function RegisterForm() {
                 className={`mt-1 ${err(state, 'phone') ? 'border-red-400 bg-red-50' : ''}`}
               />
               <FieldError msg={err(state, 'phone')} />
+            </div>
+          </div>
+
+          {/* ── Delivery Address ─────────────────────────────────────── */}
+          <SectionHeading>Delivery Address</SectionHeading>
+
+          <div>
+            <Label htmlFor="address_line1">
+              Street Address <span className="text-red-500">*</span>
+            </Label>
+            <div className="mt-1">
+              <AddressAutocomplete
+                name="address_line1"
+                value={addressLine1}
+                onChange={setAddressLine1}
+                onAddressSelect={handleAddressSelect}
+                placeholder="Start typing your address…"
+                hasError={!!err(state, 'address_line1')}
+              />
+            </div>
+            {/* Hidden inputs so server action can read controlled values */}
+            <input type="hidden" name="city"        value={city} />
+            <input type="hidden" name="state"       value={addrState} />
+            <input type="hidden" name="postal_code" value={postalCode} />
+            <input type="hidden" name="country"     value={country} />
+            <FieldError msg={err(state, 'address_line1')} />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="city_display">City <span className="text-red-500">*</span></Label>
+              <Input
+                id="city_display"
+                value={city}
+                onChange={e => setCity(e.target.value)}
+                placeholder="City"
+                className={`mt-1 ${err(state, 'city') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'city')} />
+            </div>
+            <div>
+              <Label htmlFor="state_display">State / Province <span className="text-red-500">*</span></Label>
+              <Input
+                id="state_display"
+                value={addrState}
+                onChange={e => setAddrState(e.target.value)}
+                placeholder="State or province"
+                className={`mt-1 ${err(state, 'state') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'state')} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="postal_display">ZIP / Postal Code <span className="text-red-500">*</span></Label>
+              <Input
+                id="postal_display"
+                value={postalCode}
+                onChange={e => setPostalCode(e.target.value)}
+                placeholder="ZIP or postal code"
+                className={`mt-1 ${err(state, 'postal_code') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'postal_code')} />
+            </div>
+            <div>
+              <Label htmlFor="country_display">Country <span className="text-red-500">*</span></Label>
+              <Input
+                id="country_display"
+                value={country}
+                onChange={e => setCountry(e.target.value)}
+                placeholder="Country"
+                className={`mt-1 ${err(state, 'country') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'country')} />
             </div>
           </div>
 

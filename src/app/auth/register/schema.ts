@@ -38,6 +38,13 @@ export const registerSchema = z
       .min(7, 'Business phone is required')
       .regex(/^[\d\s\-+().]{7,}$/, 'Enter a valid business phone number'),
     website: z.string().trim().max(300).optional(),
+
+    // Delivery address
+    address_line1: z.string().trim().min(1, 'Delivery address is required').max(300),
+    city:          z.string().trim().min(1, 'City is required').max(120),
+    state:         z.string().trim().min(1, 'State / province is required').max(120),
+    postal_code:   z.string().trim().min(1, 'ZIP / postal code is required').max(32),
+    country:       z.string().trim().min(1, 'Country is required').max(120),
   })
   .refine((d) => d.email === d.confirm_email, {
     message: 'Emails do not match',
