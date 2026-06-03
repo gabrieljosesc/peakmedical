@@ -10,6 +10,7 @@
     "seed:catalog": "node scripts/seed-catalog.mjs",
     "seed:peptides": "node scripts/seed-peptides.mjs",
     "upload:images": "node scripts/upload-images.mjs",
+    "fix:images": "node scripts/fix-missing-images.mjs",
     "migrate:wp": "node scripts/migrate-wordpress.mjs",
     "migrate:resets": "node scripts/send-password-resets.mjs"
   },
