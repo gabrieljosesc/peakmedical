@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/sonner'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -33,11 +34,18 @@ export default async function RootLayout({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  const admin = createAdminClient()
+  const { data: categories } = await admin
+    .from('categories')
+    .select('id, slug, name, parent_id')
+    .is('parent_id', null)
+    .order('sort_order')
+
   return (
     <html lang="en" className="h-full antialiased">
       <body className={`${inter.className} min-h-full flex flex-col bg-gray-50`}>
         <CartProvider>
-          <Navbar user={user} />
+          <Navbar user={user} categories={categories ?? []} />
           <main className="flex-1">
             {children}
           </main>

@@ -6,15 +6,19 @@ import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { ShieldCheck, Truck, HeadphonesIcon, Award } from 'lucide-react'
 
-const categories = [
-  { name: 'Dermal Fillers', slug: 'dermal-fillers', description: 'HA & collagen fillers', color: 'bg-pink-50 border-pink-100' },
-  { name: 'Botulinum Toxins', slug: 'botulinum-toxins', description: 'Botox & neuromodulators', color: 'bg-purple-50 border-purple-100' },
-  { name: 'Peptides', slug: 'peptides', description: 'Research-grade peptides', color: 'bg-blue-50 border-blue-100' },
-  { name: 'Mesotherapy', slug: 'mesotherapy', description: 'Skin-quality solutions', color: 'bg-cyan-50 border-cyan-100' },
-  { name: 'Orthopedic Injections', slug: 'orthopedic-injections', description: 'Joint-care injectables', color: 'bg-green-50 border-green-100' },
-  { name: 'Weight Loss', slug: 'weight-loss', description: 'GLP-1 & anti-obesity', color: 'bg-orange-50 border-orange-100' },
-  { name: 'Threads', slug: 'threads', description: 'PDO lifting threads', color: 'bg-rose-50 border-rose-100' },
-  { name: 'Skincare', slug: 'skincare', description: 'Professional skincare', color: 'bg-yellow-50 border-yellow-100' },
+const CAT_COLORS = [
+  'bg-pink-50 border-pink-100',
+  'bg-purple-50 border-purple-100',
+  'bg-blue-50 border-blue-100',
+  'bg-cyan-50 border-cyan-100',
+  'bg-green-50 border-green-100',
+  'bg-orange-50 border-orange-100',
+  'bg-rose-50 border-rose-100',
+  'bg-yellow-50 border-yellow-100',
+  'bg-teal-50 border-teal-100',
+  'bg-indigo-50 border-indigo-100',
+  'bg-red-50 border-red-100',
+  'bg-emerald-50 border-emerald-100',
 ]
 
 const trustFeatures = [
@@ -26,12 +30,33 @@ const trustFeatures = [
 
 export default async function HomePage() {
   const supabase = createAdminClient()
-  const { data: featured } = await supabase
+
+  // Fetch categories from DB (same query as navbar)
+  const { data: dbCategories } = await supabase
+    .from('categories')
+    .select('id, slug, name')
+    .is('parent_id', null)
+    .order('sort_order')
+    .limit(12)
+
+  // Show featured products, fall back to latest if none marked featured
+  let { data: featured } = await supabase
     .from('products')
     .select('*, category:categories(*), images:product_images(id,url,sort_order)')
     .eq('is_featured', true)
     .eq('is_active', true)
     .limit(8)
+
+  if (!featured || featured.length === 0) {
+    const { data: latest } = await supabase
+      .from('products')
+      .select('*, category:categories(*), images:product_images(id,url,sort_order)')
+      .eq('is_active', true)
+      .gt('base_price', 0)
+      .order('created_at', { ascending: false })
+      .limit(8)
+    featured = latest
+  }
 
   return (
     <div>
@@ -77,22 +102,21 @@ export default async function HomePage() {
           <h2 className="text-2xl font-bold text-gray-800">Shop by Category</h2>
           <Link href="/shop" className="text-sm text-[#1a3a5c] hover:underline font-medium">View all →</Link>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-          {categories.map(cat => (
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+          {(dbCategories ?? []).map((cat, i) => (
             <Link key={cat.slug} href={`/shop/${cat.slug}`}
-              className={`rounded-xl border p-3 text-center hover:shadow-md transition-shadow ${cat.color}`}>
-              <h3 className="font-semibold text-gray-800 text-xs mb-1">{cat.name}</h3>
-              <p className="text-xs text-gray-500 hidden sm:block">{cat.description}</p>
+              className={`rounded-xl border p-3 text-center hover:shadow-md transition-shadow ${CAT_COLORS[i % CAT_COLORS.length]}`}>
+              <h3 className="font-semibold text-gray-800 text-xs leading-snug">{cat.name}</h3>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* Featured products */}
+      {/* Featured / Latest products */}
       {featured && featured.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 pb-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Featured Products</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Latest Products</h2>
             <Link href="/shop" className="text-sm text-[#1a3a5c] hover:underline font-medium">View all →</Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
