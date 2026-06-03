@@ -11,6 +11,7 @@
     "seed:peptides": "node scripts/seed-peptides.mjs",
     "upload:images": "node scripts/upload-images.mjs",
     "fix:images": "node scripts/fix-missing-images.mjs",
+    "fix:images-cdn": "node scripts/fix-images-cdn-fallback.mjs",
     "migrate:wp": "node scripts/migrate-wordpress.mjs",
     "migrate:resets": "node scripts/send-password-resets.mjs"
   },
