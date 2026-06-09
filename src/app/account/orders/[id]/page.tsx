@@ -1,6 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { Order, OrderItem } from '@/types'
 import { formatPrice } from '@/lib/utils'
@@ -32,7 +31,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const addr = order.shipping_address as Order['shipping_address']
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Order Details</h1>

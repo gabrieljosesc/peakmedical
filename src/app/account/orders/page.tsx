@@ -26,12 +26,9 @@ export default async function OrdersPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">My Orders</h1>
-        <Link href="/account" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-          ← Back
-        </Link>
       </div>
 
       {!orders || orders.length === 0 ? (
