@@ -1,6 +1,31 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Phone, Mail, Clock } from 'lucide-react'
+import { Phone, Mail, Clock, ShieldCheck } from 'lucide-react'
+
+function PaymentBadges() {
+  const chip = 'flex items-center justify-center h-8 min-w-[52px] px-2.5 rounded-md bg-white shadow-sm'
+  return (
+    <div className="flex flex-wrap items-center gap-2.5">
+      {/* Visa */}
+      <div className={chip}><span className="text-[#1a1f71] font-bold italic text-sm tracking-tight">VISA</span></div>
+      {/* Mastercard */}
+      <div className={chip}>
+        <span className="relative inline-flex items-center">
+          <span className="w-4 h-4 rounded-full bg-[#eb001b]" />
+          <span className="w-4 h-4 rounded-full bg-[#f79e1b] -ml-2 mix-blend-multiply" />
+        </span>
+      </div>
+      {/* Amex */}
+      <div className="flex items-center justify-center h-8 min-w-[52px] px-2.5 rounded-md bg-[#006fcf] shadow-sm">
+        <span className="text-white font-bold text-[11px] tracking-wide">AMEX</span>
+      </div>
+      {/* Google Pay */}
+      <div className={chip}><span className="font-medium text-sm text-gray-700"><span className="text-[#4285F4]">G</span> Pay</span></div>
+      {/* Apple Pay */}
+      <div className={chip}><span className="font-medium text-sm text-gray-800"> Pay</span></div>
+    </div>
+  )
+}
 
 const shopLinks = [
   { label: 'All Products', href: '/shop' },
@@ -81,6 +106,21 @@ export default function Footer() {
               <li key={link.href}><Link href={link.href} className="text-sm text-white/70 hover:text-white transition-colors">{link.label}</Link></li>
             ))}
           </ul>
+        </div>
+      </div>
+
+      {/* Accepted payment methods */}
+      <div className="border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <h3 className="text-lg font-semibold mb-4">Accepted Payment Methods</h3>
+          <PaymentBadges />
+          <p className="mt-4 text-sm text-white/70">
+            *Apple/Google Pay access is provided by your account manager.
+          </p>
+          <p className="mt-2 flex items-start gap-2 text-sm text-white/70">
+            <ShieldCheck className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-200" />
+            Your payment is handled through a secure process that fully complies with PCI DSS standards.
+          </p>
         </div>
       </div>
 

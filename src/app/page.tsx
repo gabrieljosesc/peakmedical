@@ -73,7 +73,7 @@ export default async function HomePage() {
               <Link href="/shop" className={cn(buttonVariants({ size: 'lg' }), 'bg-white text-[#1a3a5c] hover:bg-gray-100 font-semibold gap-2')}>
                 Shop All Products <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link href="/auth/register" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'border-white text-white hover:bg-white/10')}>
+              <Link href="/auth/register" className={cn(buttonVariants({ size: 'lg' }), 'bg-transparent border border-white text-white hover:bg-white hover:text-[#1a3a5c] font-semibold')}>
                 Create Account
               </Link>
             </div>
