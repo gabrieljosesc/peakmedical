@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { ShoppingCart, Heart, User, Search, Menu, Phone, ChevronDown } from 'lucide-react'
 import { useState } from 'react'
@@ -58,8 +59,7 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link href="/" className="flex-shrink-0">
-          <span className="text-2xl font-bold text-[#1a3a5c]">Peak Medical</span>
-          <span className="block text-xs text-gray-500 -mt-1 tracking-widest uppercase">Wholesale</span>
+          <Image src="/logo.svg" alt="Peak Medical Wholesale" width={200} height={61} priority unoptimized className="h-12 w-auto" />
         </Link>
 
         {/* Desktop search */}

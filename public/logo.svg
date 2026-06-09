@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 110" width="360" height="110" role="img" aria-label="Peak Medical Wholesale">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c9a35a"/>
+      <stop offset="1" stop-color="#9c7a35"/>
+    </linearGradient>
+  </defs>
+  <!-- birds -->
+  <path d="M232 20 q5 -5 10 0 q5 -5 10 0" fill="none" stroke="#1f3a5c" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M255 27 q4 -4 8 0 q4 -4 8 0" fill="none" stroke="#1f3a5c" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- mountains -->
+  <g fill="#1f3a5c">
+    <path d="M120 60 L150 18 L168 42 L182 26 L210 60 Z"/>
+    <path d="M150 18 L156 26 L150 33 L144 26 Z" fill="#ffffff" opacity="0.85"/>
+    <path d="M182 26 L187 33 L182 39 L177 33 Z" fill="#ffffff" opacity="0.85"/>
+  </g>
+  <!-- PEAK MEDICAL -->
+  <text x="180" y="84" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif" font-size="30" font-weight="600"
+        letter-spacing="6" fill="url(#gold)">PEAK MEDICAL</text>
+  <!-- rules + WHOLESALE -->
+  <line x1="92" y1="99" x2="138" y2="99" stroke="#1f3a5c" stroke-width="1.2"/>
+  <line x1="222" y1="99" x2="268" y2="99" stroke="#1f3a5c" stroke-width="1.2"/>
+  <text x="180" y="104" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif" font-size="14" font-weight="500"
+        letter-spacing="9" fill="#1f3a5c">WHOLESALE</text>
+</svg>

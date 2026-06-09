@@ -1,0 +1,42 @@
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
+import { createAdminClient } from '@/lib/supabase/server'
+
+export const dynamic = 'force-dynamic'
+
+interface Props { params: Promise<{ slug: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params
+  const supabase = createAdminClient()
+  const { data } = await supabase.from('blog_posts').select('title, excerpt').eq('slug', slug).single()
+  if (!data) return {}
+  return { title: data.title, description: data.excerpt ?? undefined }
+}
+
+export default async function BlogPostPage({ params }: Props) {
+  const { slug } = await params
+  const supabase = createAdminClient()
+  const { data: post } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .eq('slug', slug)
+    .eq('is_published', true)
+    .single()
+
+  if (!post) notFound()
+
+  return (
+    <article className="max-w-3xl mx-auto px-4 py-12">
+      <Link href="/blog" className="text-sm text-[#1a3a5c] hover:underline">← Back to Blog</Link>
+      <h1 className="text-3xl font-bold text-gray-900 mt-4 mb-2">{post.title}</h1>
+      <p className="text-sm text-gray-400 mb-8">
+        {post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}
+      </p>
+      <div className="prose prose-gray max-w-none whitespace-pre-wrap leading-relaxed text-gray-700">
+        {post.body}
+      </div>
+    </article>
+  )
+}
