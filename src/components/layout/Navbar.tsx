@@ -62,13 +62,15 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
 
       {/* Main nav row */}
       <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between gap-6">
-        {/* Logo */}
-        <Link href="/" className="flex-shrink-0">
-          <Image src="/logo.svg" alt="Peak Medical Wholesale" width={200} height={61} priority unoptimized className="h-12 w-auto" />
-        </Link>
+        {/* Left group: logo + nav */}
+        <div className="flex items-center gap-10">
+          {/* Logo */}
+          <Link href="/" className="flex-shrink-0">
+            <Image src="/logo.svg" alt="Peak Medical Wholesale" width={200} height={61} priority unoptimized className="h-12 w-auto" />
+          </Link>
 
-        {/* Center nav (desktop) */}
-        <nav className="hidden lg:flex items-center gap-8">
+          {/* Nav (desktop, left-aligned beside logo) */}
+          <nav className="hidden lg:flex items-center gap-8">
           {navLink('/', 'Home', pathname === '/')}
 
           {/* Products dropdown */}
@@ -103,7 +105,8 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
           {navLink('/about', 'About us', pathname === '/about')}
           {navLink('/blog', 'Blog', pathname.startsWith('/blog'))}
           {navLink('/contact', 'Contact us', pathname === '/contact')}
-        </nav>
+          </nav>
+        </div>
 
         {/* Right actions */}
         <div className="flex items-center gap-1">

@@ -48,23 +48,24 @@ export default async function HomePage() {
       .eq('is_published', true).order('published_at', { ascending: false }).limit(3),
   ])
 
-  // hero image: first featured product image, fallback to any
-  const heroImg = (featured as Product[] | null)?.find(p => p.images?.[0]?.url)?.images?.[0]?.url ?? null
-
   return (
     <div>
-      {/* ── HERO (big image) ─────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#1a3a5c] via-[#22507e] to-[#2a5a8c]">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, white 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-        <div className="relative max-w-7xl mx-auto px-4 py-16 lg:py-24 grid lg:grid-cols-2 gap-10 items-center">
-          <div className="text-white">
+      {/* ── HERO (background image) ──────────────────────────────────── */}
+      <section
+        className="relative overflow-hidden bg-[#1a3a5c] bg-cover bg-center"
+        style={{ backgroundImage: 'url(/hero-bg.svg)' }}
+      >
+        {/* left-to-right dark overlay for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0f2438]/90 via-[#13314d]/70 to-transparent" />
+        <div className="relative max-w-7xl mx-auto px-4 py-20 lg:py-28">
+          <div className="max-w-2xl text-white">
             <p className="inline-flex items-center gap-2 text-blue-200 text-xs font-semibold tracking-widest uppercase mb-4 bg-white/10 rounded-full px-3 py-1">
               <Award className="w-3.5 h-3.5" /> Trusted by Medical Professionals Since 2012
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.05] mb-5">
               Premium Medical Supplies at Wholesale Prices
             </h1>
-            <p className="text-white/80 text-lg mb-8 max-w-xl">
+            <p className="text-white/85 text-lg mb-8 max-w-xl">
               We specialize in the wholesale of botulinum toxins, dermal fillers, orthopedic
               injectables, rheumatology, and research peptides — delivered straight to your clinic.
             </p>
@@ -77,23 +78,9 @@ export default async function HomePage() {
               </Link>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 mt-8 text-sm text-white/75">
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-blue-300" /> Authentic & guaranteed</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-blue-300" /> Authentic &amp; guaranteed</span>
               <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-blue-300" /> Cold-chain shipping</span>
               <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-blue-300" /> Licensed pros only</span>
-            </div>
-          </div>
-
-          {/* big image */}
-          <div className="relative hidden lg:block">
-            <div className="absolute -inset-4 bg-white/10 rounded-3xl blur-2xl" />
-            <div className="relative aspect-[4/3] rounded-3xl bg-white/95 shadow-2xl overflow-hidden">
-              {heroImg ? (
-                <Image src={heroImg} alt="Featured product" fill className="object-contain p-10" sizes="(max-width:1024px) 0px, 600px" priority />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[#1a3a5c]/30">
-                  <Award className="w-32 h-32" />
-                </div>
-              )}
             </div>
           </div>
         </div>
