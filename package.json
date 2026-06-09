@@ -13,6 +13,7 @@
     "upload:images": "node scripts/upload-images.mjs",
     "fix:images": "node scripts/fix-missing-images.mjs",
     "fix:images-cdn": "node scripts/fix-images-cdn-fallback.mjs",
+    "sync:images": "node scripts/sync-images-from-medicaplanet.mjs",
     "create:admin": "node scripts/create-admin.mjs",
     "migrate:wp": "node scripts/migrate-wordpress.mjs",
     "migrate:resets": "node scripts/send-password-resets.mjs"
