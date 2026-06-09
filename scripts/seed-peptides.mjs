@@ -153,7 +153,6 @@ async function main() {
   const store = await res.json();
   console.log("PureChainResearch products fetched:", store.length);
 
-  const wholesale = loadWholesalePricing();
   const overrides = loadOverrides();
 
   const supabase = createClient(url, key, { auth: { persistSession: false } });
@@ -181,21 +180,16 @@ async function main() {
     while (usedSlugs.has(slug)) { n++; slug = `${baseSlug}-${n}`; }
     usedSlugs.add(slug);
 
-    // Price: PureChainResearch list price → wholesale override → 0
+    // Price: live PureChainResearch.com store price (authoritative for peptides)
     let price = match ? storePriceDollars(match) : 0;
     let imageUrl = match ? pickImageUrl(match) : null;
 
-    // Apply manual overrides (purechain-peptides-overrides.json)
+    // Manual overrides only FILL GAPS when the API has no match (still purechain-derived)
     const ov = overrides[slug];
     if (ov) {
       if (typeof ov.price === "number" && ov.price > 0 && (!price || price === 0)) price = ov.price;
       if (typeof ov.imageUrl === "string" && ov.imageUrl.trim() && !imageUrl) imageUrl = ov.imageUrl.trim();
     }
-
-    // Apply wholesale pricing from peptide-wholesale-pricing.json
-    // This is the PureChainResearch-aligned wholesale price — use it as the base_price
-    const wPrice = resolveWholesalePrice(slug, wholesale);
-    if (wPrice != null) price = wPrice;
 
     if (!item.body?.trim() && match?.description) {
       item.body = stripHtml(match.description).slice(0, 4000) || "Research use only.";
