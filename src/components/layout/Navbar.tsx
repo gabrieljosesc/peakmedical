@@ -21,12 +21,13 @@ interface Category {
 interface Props {
   user: { id: string; email?: string } | null
   categories: Category[]
+  isAdmin?: boolean
 }
 
 // Show first N categories directly in nav bar; rest go in "More" dropdown
 const NAV_VISIBLE = 10
 
-export default function Navbar({ user, categories }: Props) {
+export default function Navbar({ user, categories, isAdmin }: Props) {
   const { count } = useCart()
   const pathname = usePathname()
   const router = useRouter()
@@ -93,6 +94,9 @@ export default function Navbar({ user, categories }: Props) {
                 <>
                   <DropdownMenuItem onClick={() => router.push('/account')}>My Account</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/account/orders')}>Orders</DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => router.push('/admin')}>Admin Panel</DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => router.push('/auth/logout')}>Sign Out</DropdownMenuItem>
                 </>
               ) : (

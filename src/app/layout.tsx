@@ -41,11 +41,22 @@ export default async function RootLayout({
     .is('parent_id', null)
     .order('sort_order')
 
+  // Check admin role for nav link
+  let isAdmin = false
+  if (user) {
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    isAdmin = profile?.role === 'admin'
+  }
+
   return (
     <html lang="en" className="h-full antialiased">
       <body className={`${inter.className} min-h-full flex flex-col bg-gray-50`}>
         <CartProvider>
-          <Navbar user={user} categories={categories ?? []} />
+          <Navbar user={user} categories={categories ?? []} isAdmin={isAdmin} />
           <main className="flex-1">
             {children}
           </main>
