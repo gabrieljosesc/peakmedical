@@ -1,0 +1,103 @@
+# Deploying Peak Medical Wholesale to Vercel
+
+This guide takes the site live on **peakmedicalwholesale.com**, replacing the
+old WordPress site. Do the steps in order. Nothing here takes the old site
+down until **Step 5** — so you can build and test on a Vercel URL first.
+
+---
+
+## Step 1 — Import the project into Vercel
+
+1. Go to https://vercel.com and sign in (use "Continue with GitHub").
+2. **Add New… → Project**.
+3. Find and **Import** the `gabrieljosesc/peakmedical` repository.
+4. Framework preset: **Next.js** (auto-detected). Leave build settings default.
+5. **Do not deploy yet** — first add the environment variables (Step 2).
+
+---
+
+## Step 2 — Environment variables
+
+In the import screen (or Project → Settings → Environment Variables), add each
+of these for **Production, Preview, and Development**:
+
+| Name | Value |
+|------|-------|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://iebpxtbrcsbgadwyrqqi.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | *(from your local `.env.local`)* |
+| `SUPABASE_SERVICE_ROLE_KEY` | *(from your local `.env.local` — keep secret)* |
+| `PAYMENT_CARD_SECRET` | `b4a32ca87cd50749fafa3f41b3c7177425a08e17a64b2ac984d2f1701f61a0a3` |
+| `NEXT_PUBLIC_SITE_URL` | `https://peakmedicalwholesale.com` |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | *(optional — for address autocomplete)* |
+
+> Copy the exact values from `C:\Users\63950\Desktop\gabby\peakmedical\.env.local`.
+> `PAYMENT_CARD_SECRET` **must match** the local value, or saved cards can't be
+> decrypted.
+
+Then click **Deploy**. Vercel builds and gives you a URL like
+`peakmedical.vercel.app`.
+
+---
+
+## Step 3 — Test on the Vercel URL
+
+Open the `*.vercel.app` URL and verify:
+- Homepage, categories, products, product images
+- Register / Login / a test order
+- Admin panel at `/admin` (log in as `admin@peakmedicalwholesale.com`)
+
+---
+
+## Step 4 — Point Supabase Auth at the production domain
+
+In the Supabase dashboard → **Authentication → URL Configuration**:
+- **Site URL:** `https://peakmedicalwholesale.com`
+- **Redirect URLs:** add
+  - `https://peakmedicalwholesale.com/**`
+  - `https://peakmedical.vercel.app/**` (so the preview keeps working)
+
+This makes email verification and password-reset links point to the live site.
+
+---
+
+## Step 5 — Connect the domain (this takes the old site down)
+
+### 5a. Add the domain in Vercel
+Project → **Settings → Domains** → add `peakmedicalwholesale.com`
+(and `www.peakmedicalwholesale.com`). Vercel shows the exact DNS targets —
+they are normally:
+
+| Type | Name | Value |
+|------|------|-------|
+| `A` | `@` | `76.76.21.21` |
+| `CNAME` | `www` | `cname.vercel-dns.com` |
+
+> Use whatever Vercel shows on screen — it's authoritative.
+
+### 5b. Update DNS in Plesk
+In the Plesk **DNS Settings for peakmedicalwholesale.com** (the screen you have open):
+1. Find the existing **A record** for the host (`@` / the bare domain) that
+   points to the OVH server IP → **edit it** to `76.76.21.21`.
+2. Find/create the **CNAME** for `www` → `cname.vercel-dns.com`.
+3. Remove any conflicting old A/AAAA records for `@` and `www` that point to OVH.
+4. Save / **Update** (Plesk may take a moment to apply).
+
+> Leave **MX records (mail)** unchanged so email keeps working.
+
+### 5c. Wait for propagation
+DNS takes ~5–60 minutes. Vercel auto-issues the HTTPS certificate once it sees
+the records. When the domain shows "Valid Configuration" in Vercel, the new
+site is live on peakmedicalwholesale.com and the old WordPress site is no
+longer served.
+
+---
+
+## After launch
+- Send migrated users their password-reset emails:
+  `npm run migrate:resets -- --limit=200 --offset=0` (repeat in batches).
+- Future pushes to the `main` branch auto-deploy to production.
+
+## Notes
+- Product images load from `medicaplanet.com` (separate domain) and from
+  Supabase Storage — both unaffected by this DNS change.
+- Blog images are now self-hosted in `/public/blog`, so they survive the cutover.
