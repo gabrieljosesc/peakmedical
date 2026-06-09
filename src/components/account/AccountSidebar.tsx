@@ -3,10 +3,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { User, MapPin, Lock, Bell, Shield, Package, LogOut } from 'lucide-react'
+import { User, CreditCard, MapPin, Lock, Bell, Shield, Package, LogOut } from 'lucide-react'
 
 const ACCOUNT_LINKS = [
   { href: '/account/profile', label: 'Profile', icon: User },
+  { href: '/account/payment-methods', label: 'Banks & Cards', icon: CreditCard },
   { href: '/account/addresses', label: 'Addresses', icon: MapPin },
   { href: '/account/password', label: 'Change Password', icon: Lock },
   { href: '/account/notifications', label: 'Notifications', icon: Bell },

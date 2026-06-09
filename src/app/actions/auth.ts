@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { registerSchema, flattenErrors } from '@/app/auth/register/schema'
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -78,7 +78,11 @@ export async function registerAction(
   }
 
   if (data.user) {
-    await supabase.from('profiles').upsert({
+    // Use admin client: during email-confirmation signup there is no session yet,
+    // so the anon client would be blocked by RLS. Service role bypasses RLS.
+    const admin = createAdminClient()
+
+    await admin.from('profiles').upsert({
       id:              data.user.id,
       email:           v.email,
       full_name:       fullName,
@@ -99,6 +103,22 @@ export async function registerAction(
       country:         v.country         || null,
       role:            'customer',
     }, { onConflict: 'id' })
+
+    // Create a default saved address from the registration delivery address
+    if (v.address_line1) {
+      await admin.from('user_addresses').insert({
+        user_id:        data.user.id,
+        label:          'Primary',
+        recipient_name: fullName || v.email,
+        phone:          v.phone || null,
+        line1:          v.address_line1,
+        city:           v.city || null,
+        state:          v.state || null,
+        postal_code:    v.postal_code || null,
+        country:        v.country || null,
+        is_default:     true,
+      })
+    }
   }
 
   revalidatePath('/', 'layout')
