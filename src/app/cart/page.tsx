@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Trash2, Minus, Plus, ShoppingCart } from 'lucide-react'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/utils'
+import { productUnitPrice } from '@/lib/price-tiers'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
@@ -35,6 +36,7 @@ export default function CartPage() {
         <div className="lg:col-span-2 space-y-3">
           {items.map(item => {
             const imageUrl = item.product.images?.[0]?.url ?? null
+            const unitPrice = productUnitPrice(item.product, item.quantity)
             return (
               <div key={item.id} className="bg-white rounded-lg border p-4 flex gap-4">
                 <div className="relative w-20 h-20 flex-shrink-0 bg-gray-50 rounded-md overflow-hidden">
@@ -53,6 +55,7 @@ export default function CartPage() {
                   {item.product.category && (
                     <p className="text-xs text-gray-400 mt-0.5">{item.product.category.name}</p>
                   )}
+                  <p className="text-xs text-gray-500 mt-0.5">{formatPrice(unitPrice)} / unit</p>
                   <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center border rounded-md">
                       <button
@@ -70,7 +73,7 @@ export default function CartPage() {
                       </button>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-semibold text-gray-800">{formatPrice(item.product.base_price * item.quantity)}</span>
+                      <span className="font-semibold text-gray-800">{formatPrice(unitPrice * item.quantity)}</span>
                       <button
                         onClick={() => removeFromCart(item.product_id)}
                         className="text-gray-400 hover:text-red-500 transition-colors"

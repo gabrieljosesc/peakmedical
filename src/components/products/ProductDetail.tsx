@@ -7,6 +7,7 @@ import { ChevronRight, Minus, Plus, ShoppingCart } from 'lucide-react'
 import { Product } from '@/types'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/utils'
+import { parsePriceTiers, unitPriceForQuantity, tierQuantityLabel } from '@/lib/price-tiers'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
@@ -17,7 +18,11 @@ export default function ProductDetail({ product }: { product: Product }) {
   const [activeImg, setActiveImg] = useState(0)
 
   const images = product.images ?? []
-  const showPrice = product.base_price > 0
+  const tiers = parsePriceTiers(product.price_tiers)
+  const showPrice = product.base_price > 0 || tiers.length > 0
+
+  const unitPrice = unitPriceForQuantity(tiers, qty, product.base_price)
+  const lineTotal = unitPrice * qty
 
   function handleAdd() {
     addToCart(product, qty)
@@ -93,40 +98,79 @@ export default function ProductDetail({ product }: { product: Product }) {
 
           <div className="mb-4">
             {showPrice ? (
-              <span className="text-3xl font-bold text-gray-900">{formatPrice(product.base_price)}</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-gray-900">{formatPrice(unitPrice)}</span>
+                <span className="text-sm text-gray-400">/ unit</span>
+              </div>
             ) : (
               <span className="text-xl text-gray-500 italic">Contact us for pricing</span>
             )}
+            {showPrice && tiers.length > 1 && (
+              <p className="text-xs text-gray-500 mt-1">Unit price updates with the quantity you choose.</p>
+            )}
           </div>
+
+          {/* Volume pricing table */}
+          {tiers.length > 0 && (
+            <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/80 overflow-hidden">
+              <p className="border-b border-gray-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-600">
+                Volume Pricing
+              </p>
+              <ul className="divide-y divide-gray-200">
+                {tiers.map((t, i) => {
+                  const active = qty >= t.minQ && qty <= t.maxQ
+                  return (
+                    <li
+                      key={`${t.minQ}-${t.maxQ}-${i}`}
+                      className={`flex items-center justify-between px-3 py-2 text-sm ${
+                        active ? 'bg-blue-50 text-[#1a3a5c] font-medium' : 'text-gray-700'
+                      }`}
+                    >
+                      <span>{tierQuantityLabel(t)}</span>
+                      <span className="tabular-nums">{formatPrice(t.price)} <span className="text-gray-400 font-normal">/ unit</span></span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
 
           <Separator className="my-4" />
 
           {showPrice && (
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center border rounded-md">
-                <button
-                  onClick={() => setQty(q => Math.max(1, q - 1))}
-                  className="px-3 py-2 hover:bg-gray-50 transition-colors"
+            <>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center border rounded-md">
+                  <button
+                    onClick={() => setQty(q => Math.max(1, q - 1))}
+                    className="px-3 py-2 hover:bg-gray-50 transition-colors"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="px-4 py-2 text-sm font-medium min-w-[3rem] text-center">{qty}</span>
+                  <button
+                    onClick={() => setQty(q => q + 1)}
+                    className="px-3 py-2 hover:bg-gray-50 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                <Button
+                  size="lg"
+                  onClick={handleAdd}
+                  className="flex-1 bg-[#1a3a5c] hover:bg-[#152f4a] gap-2"
                 >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <span className="px-4 py-2 text-sm font-medium min-w-[3rem] text-center">{qty}</span>
-                <button
-                  onClick={() => setQty(q => q + 1)}
-                  className="px-3 py-2 hover:bg-gray-50 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+                  <ShoppingCart className="w-4 h-4" />
+                  Add to Cart
+                </Button>
               </div>
-              <Button
-                size="lg"
-                onClick={handleAdd}
-                className="flex-1 bg-[#1a3a5c] hover:bg-[#152f4a] gap-2"
-              >
-                <ShoppingCart className="w-4 h-4" />
-                Add to Cart
-              </Button>
-            </div>
+              {qty > 1 && (
+                <p className="text-sm text-gray-600 mb-4">
+                  {qty} × {formatPrice(unitPrice)} ={' '}
+                  <span className="font-semibold text-gray-900">{formatPrice(lineTotal)}</span>
+                </p>
+              )}
+            </>
           )}
 
           {!showPrice && (

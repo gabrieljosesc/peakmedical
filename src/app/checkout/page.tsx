@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice, generateReferenceNumber } from '@/lib/utils'
+import { productUnitPrice } from '@/lib/price-tiers'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button'
@@ -109,7 +110,7 @@ export default function CheckoutPage() {
           product_id: item.product_id,
           title: item.product.title,
           quantity: item.quantity,
-          unit_price: item.product.base_price,
+          unit_price: productUnitPrice(item.product, item.quantity),
         }))
       )
 
@@ -206,7 +207,7 @@ export default function CheckoutPage() {
                   <div key={item.id} className="flex justify-between text-sm gap-2">
                     <span className="text-gray-600 line-clamp-2">{item.product.title} × {item.quantity}</span>
                     <span className="font-medium flex-shrink-0">
-                      {formatPrice(item.product.base_price * item.quantity)}
+                      {formatPrice(productUnitPrice(item.product, item.quantity) * item.quantity)}
                     </span>
                   </div>
                 ))}

@@ -22,12 +22,13 @@ interface Props {
   user: { id: string; email?: string } | null
   categories: Category[]
   isAdmin?: boolean
+  displayName?: string | null
 }
 
 // Show first N categories directly in nav bar; rest go in "More" dropdown
 const NAV_VISIBLE = 10
 
-export default function Navbar({ user, categories, isAdmin }: Props) {
+export default function Navbar({ user, categories, isAdmin, displayName }: Props) {
   const { count } = useCart()
   const pathname = usePathname()
   const router = useRouter()
@@ -85,9 +86,20 @@ export default function Navbar({ user, categories, isAdmin }: Props) {
 
           <DropdownMenu>
             <DropdownMenuTrigger render={
-              <button className="inline-flex items-center justify-center size-8 rounded-lg hover:bg-muted transition-colors">
-                <User className="w-5 h-5" />
-              </button>
+              user ? (
+                <button className="inline-flex items-center gap-2 rounded-lg px-2 h-9 hover:bg-muted transition-colors">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[#1a3a5c] text-white text-xs font-semibold flex-shrink-0">
+                    {(displayName ?? '?').slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="hidden sm:block max-w-[120px] truncate text-sm font-medium text-gray-700">
+                    {displayName}
+                  </span>
+                </button>
+              ) : (
+                <button className="inline-flex items-center justify-center size-8 rounded-lg hover:bg-muted transition-colors">
+                  <User className="w-5 h-5" />
+                </button>
+              )
             } />
             <DropdownMenuContent align="end">
               {user ? (

@@ -1,6 +1,7 @@
 'use client'
 
 import { CartItem, Product } from '@/types'
+import { productUnitPrice } from '@/lib/price-tiers'
 
 const CART_KEY = 'pmw_cart'
 
@@ -57,7 +58,10 @@ export function clearCart(): void {
 }
 
 export function getCartTotal(cart: CartItem[]): number {
-  return cart.reduce((sum, item) => sum + item.product.base_price * item.quantity, 0)
+  return cart.reduce(
+    (sum, item) => sum + productUnitPrice(item.product, item.quantity) * item.quantity,
+    0
+  )
 }
 
 export function getCartCount(cart: CartItem[]): number {
