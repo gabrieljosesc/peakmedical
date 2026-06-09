@@ -3,11 +3,10 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { ShoppingCart, Heart, User, Search, Menu, Phone, ChevronDown } from 'lucide-react'
+import { ShoppingCart, Heart, User, Search, Menu, Phone, ChevronDown, X } from 'lucide-react'
 import { useState } from 'react'
 import { useCart } from '@/hooks/useCart'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import SearchBar from '@/components/products/SearchBar'
@@ -26,9 +25,6 @@ interface Props {
   displayName?: string | null
 }
 
-// Show first N categories directly in nav bar; rest go in "More" dropdown
-const NAV_VISIBLE = 10
-
 export default function Navbar({ user, categories, isAdmin, displayName }: Props) {
   const { count } = useCart()
   const pathname = usePathname()
@@ -36,8 +32,17 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
 
-  const visibleCats = categories.slice(0, NAV_VISIBLE)
-  const moreCats    = categories.slice(NAV_VISIBLE)
+  const navLink = (href: string, label: string, active: boolean) => (
+    <Link
+      href={href}
+      className={cn(
+        'text-[15px] font-medium transition-colors',
+        active ? 'text-[#1a3a5c]' : 'text-gray-600 hover:text-[#1a3a5c]'
+      )}
+    >
+      {label}
+    </Link>
+  )
 
   return (
     <header className="w-full sticky top-0 z-50 bg-white border-b shadow-sm">
@@ -49,38 +54,68 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
           <span className="text-white/60 ml-2 hidden sm:inline">Mon – Fri / 9:00 AM – 6:00 PM EST</span>
         </div>
         <div className="hidden md:flex items-center gap-4 text-xs">
-          <Link href="/faq"      className="hover:text-blue-300 transition-colors">FAQ</Link>
+          <Link href="/faq" className="hover:text-blue-300 transition-colors">FAQ</Link>
           <Link href="/shipping" className="hover:text-blue-300 transition-colors">Shipping</Link>
-          <Link href="/contact"  className="hover:text-blue-300 transition-colors">Contact</Link>
+          <Link href="/referral" className="hover:text-blue-300 transition-colors">Rewards</Link>
         </div>
       </div>
 
-      {/* Main nav */}
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      {/* Main nav row */}
+      <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between gap-6">
         {/* Logo */}
         <Link href="/" className="flex-shrink-0">
           <Image src="/logo.svg" alt="Peak Medical Wholesale" width={200} height={61} priority unoptimized className="h-12 w-auto" />
         </Link>
 
-        {/* Desktop search */}
-        <div className="flex-1 max-w-xl hidden md:block">
-          <SearchBar />
-        </div>
+        {/* Center nav (desktop) */}
+        <nav className="hidden lg:flex items-center gap-8">
+          {navLink('/', 'Home', pathname === '/')}
 
-        {/* Icon actions */}
+          {/* Products dropdown */}
+          <div className="group relative">
+            <button className={cn(
+              'flex items-center gap-1 text-[15px] font-medium transition-colors',
+              pathname.startsWith('/shop') ? 'text-[#1a3a5c]' : 'text-gray-600 hover:text-[#1a3a5c]'
+            )}>
+              Products <ChevronDown className="w-4 h-4" />
+            </button>
+            <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 hidden group-hover:block z-50">
+              <div className="w-[520px] bg-white rounded-xl border shadow-xl p-4 grid grid-cols-2 gap-1">
+                {categories.map(cat => (
+                  <Link
+                    key={cat.slug}
+                    href={`/shop/${cat.slug}`}
+                    className="rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#1a3a5c] transition-colors"
+                  >
+                    {cat.name}
+                  </Link>
+                ))}
+                <Link
+                  href="/shop"
+                  className="col-span-2 mt-1 rounded-lg px-3 py-2 text-sm font-semibold text-[#1a3a5c] bg-blue-50 hover:bg-blue-100 text-center transition-colors"
+                >
+                  View All Products →
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {navLink('/about', 'About us', pathname === '/about')}
+          {navLink('/blog', 'Blog', pathname.startsWith('/blog'))}
+          {navLink('/contact', 'Contact us', pathname === '/contact')}
+        </nav>
+
+        {/* Right actions */}
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost" size="icon"
-            className="md:hidden"
+          <button
             onClick={() => setSearchOpen(v => !v)}
+            className="inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors"
+            aria-label="Search"
           >
-            <Search className="w-5 h-5" />
-          </Button>
+            {searchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+          </button>
 
-          <Link
-            href="/account/wishlist"
-            className="inline-flex items-center justify-center size-8 rounded-lg hover:bg-muted transition-colors"
-          >
+          <Link href="/account/wishlist" className="hidden sm:inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
             <Heart className="w-5 h-5" />
           </Link>
 
@@ -91,12 +126,10 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
                   <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[#1a3a5c] text-white text-xs font-semibold flex-shrink-0">
                     {(displayName ?? '?').slice(0, 1).toUpperCase()}
                   </span>
-                  <span className="hidden sm:block max-w-[120px] truncate text-sm font-medium text-gray-700">
-                    {displayName}
-                  </span>
+                  <span className="hidden sm:block max-w-[120px] truncate text-sm font-medium text-gray-700">{displayName}</span>
                 </button>
               ) : (
-                <button className="inline-flex items-center justify-center size-8 rounded-lg hover:bg-muted transition-colors">
+                <button className="inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
                   <User className="w-5 h-5" />
                 </button>
               )
@@ -106,9 +139,7 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
                 <>
                   <DropdownMenuItem onClick={() => router.push('/account')}>My Account</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/account/orders')}>Orders</DropdownMenuItem>
-                  {isAdmin && (
-                    <DropdownMenuItem onClick={() => router.push('/admin')}>Admin Panel</DropdownMenuItem>
-                  )}
+                  {isAdmin && <DropdownMenuItem onClick={() => router.push('/admin')}>Admin Panel</DropdownMenuItem>}
                   <DropdownMenuItem onClick={() => router.push('/auth/logout')}>Sign Out</DropdownMenuItem>
                 </>
               ) : (
@@ -120,10 +151,7 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link
-            href="/cart"
-            className="relative inline-flex items-center justify-center size-8 rounded-lg hover:bg-muted transition-colors"
-          >
+          <Link href="/cart" className="relative inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
             <ShoppingCart className="w-5 h-5" />
             {count > 0 && (
               <span className="absolute -top-1 -right-1 bg-[#e63946] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
@@ -134,34 +162,31 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
 
           {/* Mobile menu */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger className="md:hidden inline-flex items-center justify-center size-8 rounded-lg hover:bg-muted transition-colors">
+            <SheetTrigger className="lg:hidden inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
               <Menu className="w-5 h-5" />
             </SheetTrigger>
             <SheetContent side="left" className="w-72 overflow-y-auto">
               <nav className="mt-6 space-y-0.5">
+                <Link href="/" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#1a3a5c]">Home</Link>
+                <p className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Products</p>
                 {categories.map(cat => (
                   <Link
                     key={cat.slug}
                     href={`/shop/${cat.slug}`}
-                    className={cn(
-                      'block px-3 py-2 text-sm font-medium rounded-md transition-colors',
-                      pathname.startsWith(`/shop/${cat.slug}`)
-                        ? 'bg-[#1a3a5c] text-white'
-                        : 'text-gray-700 hover:bg-gray-100 hover:text-[#1a3a5c]'
-                    )}
                     onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      'block px-3 py-2 text-sm rounded-md transition-colors',
+                      pathname.startsWith(`/shop/${cat.slug}`) ? 'bg-[#1a3a5c] text-white' : 'text-gray-700 hover:bg-gray-100 hover:text-[#1a3a5c]'
+                    )}
                   >
                     {cat.name}
                   </Link>
                 ))}
-                <div className="pt-2 border-t mt-2">
-                  <Link
-                    href="/shop"
-                    className="block px-3 py-2 text-sm font-semibold text-[#1a3a5c] hover:bg-gray-100 rounded-md"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    All Products →
-                  </Link>
+                <Link href="/shop" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-semibold text-[#1a3a5c] hover:bg-gray-100 rounded-md">All Products →</Link>
+                <div className="pt-2 mt-2 border-t space-y-0.5">
+                  <Link href="/about" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#1a3a5c]">About us</Link>
+                  <Link href="/blog" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#1a3a5c]">Blog</Link>
+                  <Link href="/contact" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#1a3a5c]">Contact us</Link>
                 </div>
               </nav>
             </SheetContent>
@@ -169,65 +194,14 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
         </div>
       </div>
 
-      {/* Mobile search */}
+      {/* Search drawer */}
       {searchOpen && (
-        <div className="md:hidden px-4 pb-3">
-          <SearchBar />
+        <div className="border-t bg-gray-50">
+          <div className="max-w-3xl mx-auto px-4 py-3">
+            <SearchBar />
+          </div>
         </div>
       )}
-
-      {/* Category nav (desktop) */}
-      <nav className="hidden md:block border-t bg-[#1a3a5c]">
-        <div className="max-w-7xl mx-auto px-4">
-          <ul className="flex items-center flex-wrap">
-            {visibleCats.map(cat => (
-              <li key={cat.slug}>
-                <Link
-                  href={`/shop/${cat.slug}`}
-                  className={cn(
-                    'block px-3 py-2.5 text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap',
-                    pathname.startsWith(`/shop/${cat.slug}`) && 'bg-white/10 text-white'
-                  )}
-                >
-                  {cat.name}
-                </Link>
-              </li>
-            ))}
-
-            {/* "More" dropdown for remaining categories */}
-            {moreCats.length > 0 && (
-              <li className="group relative">
-                <button className="flex items-center gap-1 px-3 py-2.5 text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition-colors cursor-pointer">
-                  More <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-                <div className="absolute left-0 top-full min-w-52 bg-white shadow-lg rounded-b-md border hidden group-hover:block z-50">
-                  {moreCats.map(cat => (
-                    <Link
-                      key={cat.slug}
-                      href={`/shop/${cat.slug}`}
-                      className={cn(
-                        'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#1a3a5c] transition-colors',
-                        pathname.startsWith(`/shop/${cat.slug}`) && 'text-[#1a3a5c] font-medium'
-                      )}
-                    >
-                      {cat.name}
-                    </Link>
-                  ))}
-                </div>
-              </li>
-            )}
-
-            <li className="ml-auto">
-              <Link
-                href="/shop"
-                className="block px-4 py-2.5 text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition-colors"
-              >
-                All Products
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </nav>
     </header>
   )
 }

@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/server'
+import { blogImage } from '@/lib/blog-images'
 import { Award } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'Blog' }
@@ -25,11 +27,17 @@ export default async function BlogPage() {
         <p className="text-center text-gray-400 py-16">No posts yet. Check back soon.</p>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {posts.map(post => (
+          {posts.map(post => {
+            const cover = blogImage(post.slug)
+            return (
             <Link key={post.slug} href={`/blog/${post.slug}`}
               className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="aspect-[16/9] bg-gradient-to-br from-[#1a3a5c]/10 to-[#2a5a8c]/5 flex items-center justify-center">
-                <Award className="w-10 h-10 text-[#1a3a5c]/30" />
+              <div className="relative aspect-[16/9] bg-gradient-to-br from-[#1a3a5c]/10 to-[#2a5a8c]/5 flex items-center justify-center overflow-hidden">
+                {cover ? (
+                  <Image src={cover} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="(max-width:768px) 100vw, 33vw" />
+                ) : (
+                  <Award className="w-10 h-10 text-[#1a3a5c]/30" />
+                )}
               </div>
               <div className="p-5">
                 <p className="text-xs text-gray-400 mb-2">
@@ -39,7 +47,8 @@ export default async function BlogPage() {
                 {post.excerpt && <p className="text-sm text-gray-500 line-clamp-3">{post.excerpt}</p>}
               </div>
             </Link>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

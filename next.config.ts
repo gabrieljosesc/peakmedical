@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         hostname: 'medicaplanet.com',
         pathname: '/images/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'peakmedicalwholesale.com',
+        pathname: '/wp-content/**',
+      },
     ],
   },
 };

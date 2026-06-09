@@ -5,6 +5,7 @@ import { Product } from '@/types'
 import ProductCard from '@/components/products/ProductCard'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { blogImage } from '@/lib/blog-images'
 import {
   ShieldCheck, Truck, HeadphonesIcon, Award, Gift, Wallet,
   Star, ArrowRight, CheckCircle2,
@@ -189,11 +190,17 @@ export default async function HomePage() {
               <Link href="/blog" className="text-sm text-[#1a3a5c] hover:underline font-medium whitespace-nowrap">All posts →</Link>
             </div>
             <div className="grid md:grid-cols-3 gap-6">
-              {posts.map(post => (
+              {posts.map(post => {
+                const cover = blogImage(post.slug)
+                return (
                 <Link key={post.slug} href={`/blog/${post.slug}`}
                   className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="aspect-[16/9] bg-gradient-to-br from-[#1a3a5c]/10 to-[#2a5a8c]/5 flex items-center justify-center">
-                    <Award className="w-10 h-10 text-[#1a3a5c]/30" />
+                  <div className="relative aspect-[16/9] bg-gradient-to-br from-[#1a3a5c]/10 to-[#2a5a8c]/5 flex items-center justify-center overflow-hidden">
+                    {cover ? (
+                      <Image src={cover} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="(max-width:768px) 100vw, 33vw" />
+                    ) : (
+                      <Award className="w-10 h-10 text-[#1a3a5c]/30" />
+                    )}
                   </div>
                   <div className="p-5">
                     <p className="text-xs text-gray-400 mb-2">
@@ -203,7 +210,8 @@ export default async function HomePage() {
                     {post.excerpt && <p className="text-sm text-gray-500 line-clamp-2">{post.excerpt}</p>}
                   </div>
                 </Link>
-              ))}
+                )
+              })}
             </div>
           </div>
         </section>
