@@ -42,7 +42,7 @@ export function AccountSidebar({
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-gray-900">{displayName}</p>
           <p className="truncate text-xs text-gray-500">{email}</p>
-          <Link href="/account/profile" className="mt-1 inline-block text-xs font-medium text-[#1a3a5c] hover:underline">
+          <Link href="/account/profile" prefetch={false} className="mt-1 inline-block text-xs font-medium text-[#1a3a5c] hover:underline">
             Edit profile
           </Link>
         </div>
@@ -58,6 +58,7 @@ export function AccountSidebar({
                 <li key={href}>
                   <Link
                     href={href}
+                    prefetch={false}
                     className={`flex items-center gap-2.5 rounded-lg px-3 py-2 transition-colors ${
                       active ? 'bg-[#1a3a5c] text-white font-medium' : 'text-gray-700 hover:bg-gray-100'
                     }`}
@@ -74,6 +75,7 @@ export function AccountSidebar({
           <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Orders</p>
           <Link
             href="/account/orders"
+            prefetch={false}
             className={`flex items-center gap-2.5 rounded-lg px-3 py-2 transition-colors ${
               ordersActive ? 'bg-[#1a3a5c] text-white font-medium' : 'text-gray-700 hover:bg-gray-100'
             }`}

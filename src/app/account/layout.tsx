@@ -1,3 +1,4 @@
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuthUser } from '@/lib/supabase/auth'
 import { AccountSidebar } from '@/components/account/AccountSidebar'
@@ -6,7 +7,8 @@ import { AccountMobileTabs } from '@/components/account/AccountMobileTabs'
 export const dynamic = 'force-dynamic'
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireAuthUser('/account/profile')
+  const pathname = (await headers()).get('x-pathname') ?? '/account/profile'
+  const user = await requireAuthUser(pathname)
   const supabase = await createClient()
 
   const { data: profile } = await supabase

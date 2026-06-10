@@ -144,6 +144,13 @@ export async function loginAction(
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
+  if (!error) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      return { error: 'Sign-in succeeded but the session was not saved. Please try again.' }
+    }
+  }
+
   if (error) {
     if (/invalid login/i.test(error.message) || /invalid credentials/i.test(error.message)) {
       return { error: 'Incorrect email or password.' }

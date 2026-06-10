@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import { requireAuthUser } from '@/lib/supabase/auth'
+import { getAccountUser } from '@/lib/supabase/auth'
 import type { SavedCardRow } from '@/app/actions/saved-cards'
 import { PaymentMethodsClient } from './payment-methods-client'
 
@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Banks & Cards' }
 export const dynamic = 'force-dynamic'
 
 export default async function PaymentMethodsPage() {
-  const user = await requireAuthUser('/account/payment-methods')
+  const user = await getAccountUser()
   const supabase = await createClient()
 
   const { data: rows, error } = await supabase

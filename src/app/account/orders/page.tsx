@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { requireAuthUser } from '@/lib/supabase/auth'
+import { getAccountUser } from '@/lib/supabase/auth'
 import { Order } from '@/types'
 import { formatPrice } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
@@ -15,7 +15,7 @@ const statusColors: Record<string, string> = {
 }
 
 export default async function OrdersPage() {
-  const user = await requireAuthUser('/account/orders')
+  const user = await getAccountUser()
   const supabase = await createClient()
 
   const { data: orders } = await supabase

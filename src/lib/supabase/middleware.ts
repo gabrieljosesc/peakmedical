@@ -11,6 +11,8 @@ import { NextResponse, type NextRequest } from 'next/server'
  * Vercel and logging users out on navigation.
  */
 export async function updateSession(request: NextRequest) {
+  request.headers.set('x-pathname', request.nextUrl.pathname)
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(

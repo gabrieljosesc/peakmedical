@@ -3,21 +3,31 @@ import { redirect } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 
+export const getSupabase = cache(async () => createClient())
+
 /**
- * Single getUser() per request. Multiple parallel Server Components calling
- * auth.getUser() directly can race on token refresh (Supabase refresh tokens
- * are single-use), leaving some components with a null user while others
- * succeed — empty account pages and spurious login redirects.
+ * Read the session from cookies — no Auth server round-trip.
+ *
+ * The proxy already calls getUser() once per request to refresh tokens.
+ * Calling getUser() again in Server Components races on Supabase's single-use
+ * refresh token and can falsely return null (empty pages / login redirects
+ * while the navbar still shows the user).
  */
 export const getAuthUser = cache(async (): Promise<User | null> => {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user
+  const supabase = await getSupabase()
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.user ?? null
 })
 
-/** Same cached user lookup, with redirect for protected routes. */
-export const requireAuthUser = cache(async (loginNext = '/account/profile'): Promise<User> => {
+/** Gate protected routes. Call only from layouts / route handlers. */
+export async function requireAuthUser(loginNext = '/account/profile'): Promise<User> {
   const user = await getAuthUser()
   if (!user) redirect(`/auth/login?redirectTo=${loginNext}`)
   return user
+}
+
+/** Account child pages — layout already enforced auth. */
+export const getAccountUser = cache(async (): Promise<User> => {
+  const user = await getAuthUser()
+  return user!
 })

@@ -24,6 +24,7 @@ export function AccountMobileTabs() {
             <Link
               key={t.href}
               href={t.href}
+              prefetch={false}
               className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${
                 active ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white text-gray-600 border-gray-200'
               }`}
