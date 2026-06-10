@@ -34,7 +34,6 @@ const SLUG_HINTS = [
   [/kisspeptin/i, 'kisspeptin-10'],
   [/mots-c|motsc/i, 'mots-c-10mg'],
   [/foxo4|fox04/i, 'foxo4-dri'],
-  [/pt-141|pt141/i, 'pt-141-10mg'],
   [/tesofensine/i, 'tesofensine-500mcg'],
   [/cagrilintide/i, 'cagrilintide-10mg'],
   [/kpv/i, 'kpv-10mg'],
@@ -143,6 +142,23 @@ async function ensureBucket(supabase) {
   console.log('Created storage bucket: product-coas')
 }
 
+function coaLabel(product, parsed) {
+  if (!parsed.isEndotoxin && /NOVERA/i.test(parsed.base)) {
+    return `${product.title} (Novera)`
+  }
+  return product.title
+}
+
+function storageFileName(file) {
+  return file.replace(/[^a-zA-Z0-9._-]/g, '_')
+}
+
+function sortCoaEntries(a, b) {
+  const rankA = (a.parsed.isEndotoxin ? 0 : 100) + a.parsed.lot
+  const rankB = (b.parsed.isEndotoxin ? 0 : 100) + b.parsed.lot
+  return rankB - rankA
+}
+
 async function hasCoaColumn(supabase) {
   const { error } = await supabase.from('products').select('coa_url').limit(1)
   return !error
@@ -182,8 +198,7 @@ async function main() {
   const files = fs.readdirSync(coaDir).filter(f => f.toLowerCase().endsWith('.pdf'))
   console.log('COA PDFs:', files.length)
 
-  // Best file per product: prefer full COA over endotoxin, then highest lot #
-  const bestByProduct = new Map()
+  const matchesByProduct = new Map()
 
   for (const file of files) {
     const parsed = parseFilename(file)
@@ -193,58 +208,70 @@ async function main() {
       continue
     }
 
-    const { product, score } = match
-    const prev = bestByProduct.get(product.id)
-    const rank = (parsed.isEndotoxin ? 0 : 100) + parsed.lot + score / 1000
-
-    if (!prev || rank > prev.rank) {
-      bestByProduct.set(product.id, { file, product, rank, parsed })
-    }
+    const { product } = match
+    const list = matchesByProduct.get(product.id) ?? []
+    list.push({ file, parsed, product })
+    matchesByProduct.set(product.id, list)
   }
 
-  console.log('\nMatched products:', bestByProduct.size)
+  console.log('\nMatched products:', matchesByProduct.size)
 
   const manifest = {}
   let uploaded = 0
+  let totalCoas = 0
 
-  for (const { file, product } of bestByProduct.values()) {
-    const storagePath = `${product.slug}/coa.pdf`
-    const body = fs.readFileSync(path.join(coaDir, file))
+  for (const entries of matchesByProduct.values()) {
+    const { product } = entries[0]
+    const sorted = [...entries].sort(sortCoaEntries)
+    const usedLabels = new Set()
+    const coas = []
 
-    const { error: upErr } = await supabase.storage
-      .from('product-coas')
-      .upload(storagePath, body, { contentType: 'application/pdf', upsert: true })
+    for (const { file, parsed } of sorted) {
+      const storagePath = `${product.slug}/${storageFileName(file)}`
+      const body = fs.readFileSync(path.join(coaDir, file))
 
-    if (upErr) {
-      console.error('Upload failed:', product.slug, upErr.message)
-      continue
+      const { error: upErr } = await supabase.storage
+        .from('product-coas')
+        .upload(storagePath, body, { contentType: 'application/pdf', upsert: true })
+
+      if (upErr) {
+        console.error('Upload failed:', product.slug, upErr.message)
+        continue
+      }
+
+      const { data: { publicUrl } } = supabase.storage.from('product-coas').getPublicUrl(storagePath)
+
+      let label = coaLabel(product, parsed)
+      if (usedLabels.has(label)) {
+        label = `${label} — ${parsed.lot || path.basename(file, '.pdf').slice(0, 24)}`
+      }
+      usedLabels.add(label)
+
+      coas.push({ label, url: publicUrl })
+      console.log('✓', label, '←', file)
+      uploaded++
+      totalCoas++
     }
 
-    const { data: { publicUrl } } = supabase.storage.from('product-coas').getPublicUrl(storagePath)
-    manifest[product.slug] = publicUrl
+    if (coas.length === 0) continue
+    manifest[product.slug] = coas
 
     if (dbCoaColumn) {
       const { error: dbErr } = await supabase
         .from('products')
-        .update({ coa_url: publicUrl })
+        .update({ coa_url: coas[0].url })
         .eq('id', product.id)
 
-      if (dbErr) {
-        console.error('DB update failed:', product.slug, dbErr.message)
-        continue
-      }
+      if (dbErr) console.error('DB update failed:', product.slug, dbErr.message)
     }
-
-    console.log('✓', product.title, '←', file)
-    uploaded++
   }
 
   const manifestPath = path.join(peakRoot, 'src', 'data', 'coa-manifest.json')
   fs.mkdirSync(path.dirname(manifestPath), { recursive: true })
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
-  console.log(`Wrote manifest: ${manifestPath} (${Object.keys(manifest).length} entries)`)
+  console.log(`Wrote manifest: ${manifestPath} (${Object.keys(manifest).length} products, ${totalCoas} COAs)`)
 
-  console.log(`\nDone. Uploaded COAs: ${uploaded}/${bestByProduct.size}`)
+  console.log(`\nDone. Uploaded COAs: ${uploaded} files across ${Object.keys(manifest).length} products`)
 }
 
 main().catch(e => { console.error(e); process.exit(1) })

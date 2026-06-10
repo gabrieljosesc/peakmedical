@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ChevronRight, Minus, Plus, ShoppingCart, FileDown } from 'lucide-react'
+import { ChevronRight, ExternalLink, Minus, Plus, ShoppingCart } from 'lucide-react'
 import { Product } from '@/types'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/utils'
@@ -192,16 +192,27 @@ export default function ProductDetail({ product }: { product: Product }) {
             <p>✓ Team contacts you within 24 hrs to confirm payment & shipping</p>
           </div>
 
-          {product.coa_url && (
-            <a
-              href={product.coa_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 rounded-lg border border-[#1a3a5c]/30 bg-white px-4 py-2.5 text-sm font-semibold text-[#1a3a5c] hover:bg-blue-50 transition-colors"
-            >
-              <FileDown className="w-4 h-4" />
-              Download Certificate of Analysis (COA)
-            </a>
+          {product.coas && product.coas.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-base font-bold text-gray-900">Certificate of Analysis</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Third-party lab reports (opens in a new tab).
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {product.coas.map((coa) => (
+                  <a
+                    key={coa.url}
+                    href={coa.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-[#3d7a7a] bg-white px-4 py-2 text-sm font-medium text-[#2d5f5f] transition-colors hover:bg-[#f0f7f7]"
+                  >
+                    {coa.label}
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-80" />
+                  </a>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>

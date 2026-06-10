@@ -21,6 +21,11 @@ export interface ProductImage {
   sort_order: number
 }
 
+export interface ProductCoa {
+  label: string
+  url: string
+}
+
 export interface Product {
   id: string
   slug: string
@@ -37,6 +42,7 @@ export interface Product {
   is_active: boolean
   is_featured: boolean
   coa_url?: string | null
+  coas?: ProductCoa[]
   created_at: string
   updated_at: string
   category?: Category

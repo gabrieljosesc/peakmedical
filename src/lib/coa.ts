@@ -1,8 +1,14 @@
 import coaManifest from '@/data/coa-manifest.json'
+import type { ProductCoa } from '@/types'
 
-/** COA URL from DB column or upload manifest (when column not yet migrated). */
-export function getProductCoaUrl(slug: string, coaUrl?: string | null): string | null {
-  if (coaUrl) return coaUrl
-  const url = (coaManifest as Record<string, string>)[slug]
-  return url ?? null
+type ManifestEntry = ProductCoa[] | string
+
+/** COA links from manifest or legacy single DB column. */
+export function getProductCoas(slug: string, coaUrl?: string | null): ProductCoa[] {
+  const entry = (coaManifest as Record<string, ManifestEntry>)[slug]
+
+  if (Array.isArray(entry) && entry.length > 0) return entry
+  if (typeof entry === 'string') return [{ label: 'Certificate of Analysis', url: entry }]
+  if (coaUrl) return [{ label: 'Certificate of Analysis', url: coaUrl }]
+  return []
 }

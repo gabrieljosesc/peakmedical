@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
 import { Product } from '@/types'
-import { getProductCoaUrl } from '@/lib/coa'
+import { getProductCoas } from '@/lib/coa'
 import ProductDetail from '@/components/products/ProductDetail'
 import ProductCard from '@/components/products/ProductCard'
 import { ProductReviews } from '@/components/products/ProductReviews'
@@ -53,7 +53,7 @@ export default async function ProductPage({ params }: Props) {
       <ProductDetail
         product={{
           ...(product as Product),
-          coa_url: getProductCoaUrl(slug, product.coa_url),
+          coas: getProductCoas(slug, product.coa_url),
         }}
       />
 
