@@ -27,6 +27,16 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Build a redirect that PRESERVES any refreshed auth cookies set above.
+  // Without copying them, a token refresh during this request is lost, the
+  // browser keeps a rotated/stale refresh token, and the next navigation
+  // intermittently appears logged out (bounced to /auth/login).
+  function redirectWithCookies(url: URL) {
+    const res = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach(c => res.cookies.set(c))
+    return res
+  }
+
   const protectedRoutes = ['/account', '/checkout', '/admin']
   const isProtected = protectedRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)
@@ -36,7 +46,7 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     url.searchParams.set('redirectTo', request.nextUrl.pathname)
-    return NextResponse.redirect(url)
+    return redirectWithCookies(url)
   }
 
   const adminRoute = request.nextUrl.pathname.startsWith('/admin')
@@ -47,7 +57,7 @@ export async function updateSession(request: NextRequest) {
       .eq('id', user.id)
       .single()
     if (profile?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url))
+      return redirectWithCookies(new URL('/', request.url))
     }
   }
 
