@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice, generateReferenceNumber } from '@/lib/utils'
 import { productUnitPrice } from '@/lib/price-tiers'
+import { notifyNewOrder } from '@/app/actions/orders'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button'
@@ -113,6 +114,9 @@ export default function CheckoutPage() {
           unit_price: productUnitPrice(item.product, item.quantity),
         }))
       )
+
+      // Fire order notifications (customer + admin); don't block on result
+      void notifyNewOrder(order.id)
 
       clearCart()
       router.push(`/order-confirmed?ref=${ref}`)

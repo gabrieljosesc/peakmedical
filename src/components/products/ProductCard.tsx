@@ -2,10 +2,11 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, Heart } from 'lucide-react'
 import { Product } from '@/types'
 import { formatPrice } from '@/lib/utils'
 import { useCart } from '@/hooks/useCart'
+import { useWishlist } from '@/hooks/useWishlist'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
@@ -15,13 +16,21 @@ interface Props {
 
 export default function ProductCard({ product }: Props) {
   const { addToCart } = useCart()
+  const { isWishlisted, toggle } = useWishlist()
   const imageUrl = product.images?.[0]?.url ?? null
   const showPrice = product.base_price > 0
+  const wished = isWishlisted(product.id)
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault()
     addToCart(product, 1)
     toast.success(`${product.title} added to cart`)
+  }
+
+  function handleWishlist(e: React.MouseEvent) {
+    e.preventDefault()
+    toggle(product)
+    toast.success(wished ? `Removed from wishlist` : `${product.title} added to wishlist`)
   }
 
   return (
@@ -42,6 +51,14 @@ export default function ProductCard({ product }: Props) {
               <ShoppingCart className="w-12 h-12" />
             </div>
           )}
+          {/* Wishlist heart */}
+          <button
+            onClick={handleWishlist}
+            aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
+            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white shadow-sm transition-colors"
+          >
+            <Heart className={`w-4 h-4 ${wished ? 'fill-[#e63946] text-[#e63946]' : 'text-gray-400'}`} />
+          </button>
         </div>
 
         {/* Info */}

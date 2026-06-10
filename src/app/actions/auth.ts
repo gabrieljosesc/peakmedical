@@ -63,11 +63,15 @@ export async function registerAction(
     .trim()
 
   const supabase = await createClient()
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
   const { data, error } = await supabase.auth.signUp({
     email: v.email,
     password: v.password,
-    options: { data: { full_name: fullName } },
+    options: {
+      data: { full_name: fullName },
+      emailRedirectTo: `${siteUrl}/auth/callback?next=/account`,
+    },
   })
 
   if (error) {
@@ -165,7 +169,7 @@ export async function forgotPasswordAction(
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/update-password`,
+    redirectTo: `${siteUrl}/auth/callback?next=/auth/update-password`,
   })
 
   // Always return success — don't reveal whether email exists

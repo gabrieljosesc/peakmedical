@@ -74,7 +74,7 @@ async function main() {
 
   console.log(`Total users: ${allUsers.length}`);
   console.log(`Targets for reset (offset=${OFFSET}, limit=${LIMIT}): ${targets.length}`);
-  console.log(`Reset link redirect: ${SITE_URL}/auth/login\n`);
+  console.log(`Reset link redirect: ${SITE_URL}/auth/callback?next=/auth/update-password\n`);
 
   let sent = 0, failed = 0;
 
@@ -83,7 +83,7 @@ async function main() {
       type: "recovery",
       email: user.email,
       options: {
-        redirectTo: `${SITE_URL}/auth/login`,
+        redirectTo: `${SITE_URL}/auth/callback?next=/auth/update-password`,
       },
     });
 

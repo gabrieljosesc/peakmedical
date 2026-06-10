@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { sendOrderStatusEmail, type OrderEmailRow, type OrderStatus } from '@/lib/email/order-emails'
 
 // ── Admin guard ─────────────────────────────────────────────────────────────
 async function requireAdmin() {
@@ -91,12 +92,29 @@ export async function updateOrderAction(formData: FormData): Promise<void> {
   const status = String(formData.get('status'))
   const admin_notes = String(formData.get('admin_notes') || '')
 
+  // Detect status change to decide whether to email the customer
+  const { data: before } = await supabase.from('orders').select('status').eq('id', id).single()
+  const previousStatus = before?.status as OrderStatus | undefined
+
   const { error } = await supabase
     .from('orders')
     .update({ status, admin_notes })
     .eq('id', id)
 
   if (error) redirect(`/admin/orders/${id}?error=${encodeURIComponent(error.message)}`)
+
+  // Email the customer when the status actually changes
+  if (previousStatus && previousStatus !== status) {
+    const svc = createAdminClient()
+    const { data: order } = await svc
+      .from('orders')
+      .select('id, reference_number, email, full_name, status, subtotal, order_items(title, quantity, unit_price)')
+      .eq('id', id)
+      .single()
+    if (order) {
+      void sendOrderStatusEmail(order as unknown as OrderEmailRow, status as OrderStatus)
+    }
+  }
 
   revalidatePath('/admin/orders')
   revalidatePath(`/admin/orders/${id}`)
@@ -150,7 +168,7 @@ export async function sendPasswordResetAction(userId: string): Promise<AdminResu
   const { error } = await svc.auth.admin.generateLink({
     type: 'recovery',
     email: authUser.user.email,
-    options: { redirectTo: `${siteUrl}/auth/update-password` },
+    options: { redirectTo: `${siteUrl}/auth/callback?next=/auth/update-password` },
   })
 
   if (error) return { ok: false, message: error.message }

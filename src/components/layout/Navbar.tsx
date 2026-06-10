@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { ShoppingCart, Heart, User, Search, Menu, Phone, ChevronDown, X } from 'lucide-react'
 import { useState } from 'react'
 import { useCart } from '@/hooks/useCart'
+import { useWishlist } from '@/hooks/useWishlist'
 import { cn } from '@/lib/utils'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -27,6 +28,7 @@ interface Props {
 
 export default function Navbar({ user, categories, isAdmin, displayName }: Props) {
   const { count } = useCart()
+  const { count: wishCount } = useWishlist()
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -118,8 +120,13 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
             {searchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
           </button>
 
-          <Link href="/account/wishlist" className="hidden sm:inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
+          <Link href="/wishlist" className="relative hidden sm:inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
             <Heart className="w-5 h-5" />
+            {wishCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-[#e63946] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                {wishCount > 99 ? '99+' : wishCount}
+              </span>
+            )}
           </Link>
 
           <DropdownMenu>
