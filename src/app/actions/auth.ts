@@ -70,8 +70,8 @@ export async function registerAction(
     password: v.password,
     options: {
       data: { full_name: fullName },
-      // PKCE: exchange code in /auth/callback, then land on profile signed in.
-      emailRedirectTo: `${siteUrl}/auth/callback?next=/account/profile`,
+      // PKCE: exchange code in /auth/callback, then land on homepage signed in.
+      emailRedirectTo: `${siteUrl}/auth/callback?next=/`,
     },
   })
 
@@ -137,7 +137,7 @@ export async function loginAction(
 ): Promise<LoginState> {
   const email    = String(formData.get('email')    ?? '').trim()
   const password = String(formData.get('password') ?? '')
-  const next     = String(formData.get('next')     ?? '/account/profile')
+  const next     = String(formData.get('next')     ?? '/')
 
   if (!email || !password) return { error: 'Email and password are required.' }
 
@@ -162,7 +162,17 @@ export async function loginAction(
   }
 
   revalidatePath('/', 'layout')
-  redirect(next || '/account/profile')
+  redirect(next || '/')
+}
+
+// ── Logout ────────────────────────────────────────────────────────────────
+// Must be a POST server action: a GET /auth/logout route gets prefetched by
+// <Link>, silently destroying the session whenever the link is on screen.
+export async function logoutAction() {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  revalidatePath('/', 'layout')
+  redirect('/')
 }
 
 // ── Forgot password ───────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { User, CreditCard, MapPin, Lock, Bell, Shield, Package, LogOut } from 'lucide-react'
+import { logoutAction } from '@/app/actions/auth'
 
 const ACCOUNT_LINKS = [
   { href: '/account/profile', label: 'Profile', icon: User },
@@ -86,12 +87,14 @@ export function AccountSidebar({
 
         <div>
           <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Session</p>
-          <Link
-            href="/auth/logout"
-            className="flex items-center gap-2.5 rounded-lg border border-red-200 bg-red-50/60 px-3 py-2 font-medium text-red-700 transition-colors hover:bg-red-100"
-          >
-            <LogOut className="w-4 h-4" /> Log Out
-          </Link>
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className="flex w-full items-center gap-2.5 rounded-lg border border-red-200 bg-red-50/60 px-3 py-2 font-medium text-red-700 transition-colors hover:bg-red-100"
+            >
+              <LogOut className="w-4 h-4" /> Log Out
+            </button>
+          </form>
         </div>
       </nav>
     </aside>

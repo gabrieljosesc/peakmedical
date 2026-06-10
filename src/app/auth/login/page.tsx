@@ -18,13 +18,13 @@ export default async function LoginPage({
   const sp = await searchParams
 
   if (sp.code) {
-    const next = safeNext(sp.next) ?? safeNext(sp.redirectTo) ?? '/account/profile'
+    const next = safeNext(sp.next) ?? safeNext(sp.redirectTo) ?? '/'
     const qs = new URLSearchParams({ code: sp.code, next })
     if (sp.verified === '1') qs.set('verified', '1')
     redirect(`/auth/callback?${qs.toString()}`)
   }
 
-  const next = safeNext(sp.next) ?? safeNext(sp.redirectTo) ?? '/account/profile'
+  const next = safeNext(sp.next) ?? safeNext(sp.redirectTo) ?? '/'
   const user = await getAuthUser()
   if (user) redirect(next)
 

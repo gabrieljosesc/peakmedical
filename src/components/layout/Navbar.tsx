@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import SearchBar from '@/components/products/SearchBar'
+import { logoutAction } from '@/app/actions/auth'
 
 interface Category {
   id: string
@@ -150,7 +151,7 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
                   <DropdownMenuItem onClick={() => router.push('/account')}>My Account</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/account/orders')}>Orders</DropdownMenuItem>
                   {isAdmin && <DropdownMenuItem onClick={() => router.push('/admin')}>Admin Panel</DropdownMenuItem>}
-                  <DropdownMenuItem onClick={() => router.push('/auth/logout')}>Sign Out</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => logoutAction()}>Sign Out</DropdownMenuItem>
                 </>
               ) : (
                 <>

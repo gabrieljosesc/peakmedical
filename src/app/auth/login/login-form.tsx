@@ -13,7 +13,7 @@ export function LoginForm() {
   const searchParams = useSearchParams()
   const registered = searchParams.get('registered') === '1'
   const verified = searchParams.get('verified') === '1'
-  const next = searchParams.get('next') ?? searchParams.get('redirectTo') ?? '/account/profile'
+  const next = searchParams.get('next') ?? searchParams.get('redirectTo') ?? '/'
 
   const [state, action, pending] = useActionState(loginAction, null)
   const error = state && 'error' in state ? state.error : null
