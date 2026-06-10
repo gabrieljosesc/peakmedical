@@ -3,7 +3,10 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { Product } from '@/types'
 import ProductDetail from '@/components/products/ProductDetail'
 import ProductCard from '@/components/products/ProductCard'
+import { ProductReviews } from '@/components/products/ProductReviews'
 import type { Metadata } from 'next'
+
+export const dynamic = 'force-dynamic'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -47,6 +50,8 @@ export default async function ProductPage({ params }: Props) {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <ProductDetail product={product as Product} />
+
+      <ProductReviews productId={product.id} slug={slug} />
 
       {related && related.length > 0 && (
         <section className="mt-16">

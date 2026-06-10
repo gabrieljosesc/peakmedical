@@ -52,6 +52,15 @@ const infoLinks = [
   { label: 'Blog', href: '/blog' },
 ]
 
+const policyLinks = [
+  { label: 'Returns & Cancellations', href: '/legal/returns' },
+  { label: 'Shipping & Cold Chain', href: '/legal/shipping-cold-chain' },
+  { label: 'Verification Policy', href: '/legal/verification-policy' },
+  { label: 'Research Use Only', href: '/legal/research-use-only' },
+  { label: 'Privacy Policy', href: '/legal/privacy' },
+  { label: 'Terms of Service', href: '/legal/terms' },
+]
+
 export default function Footer() {
   return (
     <footer className="bg-[#1a3a5c] text-white mt-16">
@@ -71,7 +80,7 @@ export default function Footer() {
       </div>
 
       {/* Link columns */}
-      <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
         <div>
           <h3 className="font-semibold text-sm uppercase tracking-widest mb-4 text-blue-200">Contact</h3>
           <div className="space-y-2 text-sm text-white/80">
@@ -103,6 +112,15 @@ export default function Footer() {
           <h3 className="font-semibold text-sm uppercase tracking-widest mb-4 text-blue-200">Information</h3>
           <ul className="space-y-2">
             {infoLinks.map(link => (
+              <li key={link.href}><Link href={link.href} className="text-sm text-white/70 hover:text-white transition-colors">{link.label}</Link></li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="font-semibold text-sm uppercase tracking-widest mb-4 text-blue-200">Policies</h3>
+          <ul className="space-y-2">
+            {policyLinks.map(link => (
               <li key={link.href}><Link href={link.href} className="text-sm text-white/70 hover:text-white transition-colors">{link.label}</Link></li>
             ))}
           </ul>
