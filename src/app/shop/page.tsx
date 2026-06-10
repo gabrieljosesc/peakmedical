@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/server'
+import { fetchShopProducts } from '@/lib/shop-products'
 import { Product, Category } from '@/types'
 import ProductCard from '@/components/products/ProductCard'
 import ShopFilters from '@/components/products/ShopFilters'
@@ -25,36 +26,18 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
 
   const supabase = createAdminClient()
 
-  let query = supabase
-    .from('products')
-    .select('*, category:categories(*), images:product_images(id,url,sort_order)', { count: 'exact' })
-    .eq('is_active', true)
-
-  if (search) {
-    query = query.ilike('title', `%${search}%`)
-  }
-  if (category) {
-    const { data: cat } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('slug', category)
-      .single()
-    if (cat) query = query.eq('category_id', cat.id)
-  }
-  if (min_price) query = query.gte('base_price', parseFloat(min_price))
-  if (max_price) query = query.lte('base_price', parseFloat(max_price))
-
-  switch (sort) {
-    case 'price_asc': query = query.order('base_price', { ascending: true }); break
-    case 'price_desc': query = query.order('base_price', { ascending: false }); break
-    default: query = query.order('created_at', { ascending: false })
-  }
+  const { products, count } = await fetchShopProducts(supabase, {
+    search,
+    category,
+    min_price,
+    max_price,
+    sort,
+    page,
+    pageSize: PAGE_SIZE,
+  })
 
   const from = (page - 1) * PAGE_SIZE
-  query = query.range(from, from + PAGE_SIZE - 1)
-
-  const { data: products, count } = await query
-  const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
+  const totalPages = Math.ceil(count / PAGE_SIZE)
 
   const { data: categories } = await supabase
     .from('categories')
@@ -72,7 +55,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
         <h1 className="text-2xl font-bold text-gray-800">
           {search ? `Search results for "${search}"` : 'All Products'}
         </h1>
-        <p className="text-sm text-gray-500 mt-1">{count ?? 0} products found</p>
+        <p className="text-sm text-gray-500 mt-1">{count} products found</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -86,7 +69,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
         <div className="flex-1">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-gray-500">
-              Showing {Math.min(from + 1, count ?? 0)}–{Math.min(from + PAGE_SIZE, count ?? 0)} of {count ?? 0} results
+              Showing {count === 0 ? 0 : from + 1}–{Math.min(from + PAGE_SIZE, count)} of {count} results
             </p>
             <ShopSort currentSort={sort} />
           </div>
