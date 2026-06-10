@@ -11,6 +11,7 @@
     "seed:peptides": "node scripts/seed-peptides.mjs",
     "rebuild:peptides": "node scripts/rebuild-peptides.mjs",
     "upload:images": "node scripts/upload-images.mjs",
+    "upload:coas": "node scripts/upload-coas.mjs",
     "fix:images": "node scripts/fix-missing-images.mjs",
     "fix:images-cdn": "node scripts/fix-images-cdn-fallback.mjs",
     "sync:images": "node scripts/sync-images-from-medicaplanet.mjs",

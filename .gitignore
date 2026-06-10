@@ -20,6 +20,9 @@
 # production
 /build
 
+# local COA PDFs (upload via scripts/upload-coas.mjs)
+/COA/
+
 # misc
 .DS_Store
 *.pem

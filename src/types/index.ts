@@ -36,6 +36,7 @@ export interface Product {
   review_count: number
   is_active: boolean
   is_featured: boolean
+  coa_url?: string | null
   created_at: string
   updated_at: string
   category?: Category
