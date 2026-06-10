@@ -1,6 +1,15 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+/**
+ * Refreshes the Supabase auth session on every request and writes the
+ * refreshed cookies onto the response. This is the ONLY job of the proxy —
+ * route protection is handled in the layouts (account/layout.tsx,
+ * admin/layout.tsx), matching the proven MedicaPlanet setup.
+ *
+ * Doing redirects / DB queries here is what was corrupting the session on
+ * Vercel and logging users out on navigation.
+ */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -13,53 +22,25 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set({ name, value })
+          })
           supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => {
+            if (options) {
+              supabaseResponse.cookies.set(name, value, options)
+            } else {
+              supabaseResponse.cookies.set(name, value)
+            }
+          })
         },
       },
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // Build a redirect that PRESERVES any refreshed auth cookies set above.
-  // Without copying them, a token refresh during this request is lost, the
-  // browser keeps a rotated/stale refresh token, and the next navigation
-  // intermittently appears logged out (bounced to /auth/login).
-  function redirectWithCookies(url: URL) {
-    const res = NextResponse.redirect(url)
-    supabaseResponse.cookies.getAll().forEach(c => res.cookies.set(c))
-    return res
-  }
-
-  const protectedRoutes = ['/account', '/checkout', '/admin']
-  const isProtected = protectedRoutes.some(route =>
-    request.nextUrl.pathname.startsWith(route)
-  )
-
-  if (!user && isProtected) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
-    url.searchParams.set('redirectTo', request.nextUrl.pathname)
-    return redirectWithCookies(url)
-  }
-
-  const adminRoute = request.nextUrl.pathname.startsWith('/admin')
-  if (user && adminRoute) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    if (profile?.role !== 'admin') {
-      return redirectWithCookies(new URL('/', request.url))
-    }
-  }
+  // IMPORTANT: refresh the session. Do not run other logic between
+  // createServerClient and getUser().
+  await supabase.auth.getUser()
 
   return supabaseResponse
 }
