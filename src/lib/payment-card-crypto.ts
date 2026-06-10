@@ -34,3 +34,7 @@ export function decryptCardPan(blob: string): string {
   decipher.setAuthTag(tag)
   return Buffer.concat([decipher.update(data), decipher.final()]).toString('utf8')
 }
+
+/** CVV uses the same AES-256-GCM scheme as the PAN. */
+export const encryptCardCvv = encryptCardPan
+export const decryptCardCvv = decryptCardPan

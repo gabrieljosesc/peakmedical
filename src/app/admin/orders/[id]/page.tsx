@@ -3,7 +3,17 @@ import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
 import { updateOrderAction } from '@/app/actions/admin'
 import { formatPrice } from '@/lib/utils'
+import { decryptCardCvv } from '@/lib/payment-card-crypto'
 import type { ShippingAddress } from '@/types'
+
+type CardSnapshot = {
+  brand?: string | null
+  last4?: string
+  exp_month?: number
+  exp_year?: number
+  name_on_card?: string
+  cvv_encrypted?: string
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -107,6 +117,28 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Pro
           <address className="mt-2 not-italic text-sm text-gray-700 whitespace-pre-line leading-relaxed">
             {formatAddress(shipping)}
           </address>
+        </section>
+
+        {/* Payment card (for manual processing) */}
+        <section className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm sm:col-span-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-amber-700">Payment Card (process manually)</h2>
+          {(() => {
+            const card = order.payment_card_snapshot as CardSnapshot | null
+            if (!card || !card.last4) {
+              return <p className="mt-2 text-sm text-gray-500">No card captured for this order.</p>
+            }
+            let cvv = '—'
+            try { cvv = card.cvv_encrypted ? decryptCardCvv(card.cvv_encrypted) : '—' } catch { cvv = 'decrypt error' }
+            return (
+              <div className="mt-2 text-sm text-gray-800 space-y-1">
+                <p><span className="text-gray-500">Card:</span> {(card.brand ?? 'Card').toUpperCase()} ···· {card.last4}</p>
+                <p><span className="text-gray-500">Expiry:</span> {String(card.exp_month).padStart(2, '0')}/{String(card.exp_year).slice(-2)}</p>
+                <p><span className="text-gray-500">Name on card:</span> {card.name_on_card ?? '—'}</p>
+                <p><span className="text-gray-500">CVV:</span> <span className="font-mono font-semibold">{cvv}</span></p>
+                <p className="text-xs text-amber-700 mt-1">Full card number is stored encrypted under the customer&apos;s saved cards. CVV shown here is for this order only.</p>
+              </div>
+            )
+          })()}
         </section>
       </div>
 
