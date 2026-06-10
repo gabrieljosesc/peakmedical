@@ -15,14 +15,14 @@ export default async function AddressesPage({ searchParams }: { searchParams: Pr
   const user = await getAccountUser()
   const supabase = await createClient()
 
-  const { data: rows } = await supabase
+  const { data: rows, error } = await supabase
     .from('user_addresses')
     .select('*')
     .eq('user_id', user.id)
     .order('is_default', { ascending: false })
     .order('created_at', { ascending: false })
 
-  const addresses = rows ?? []
+  const addresses = error ? [] : (rows ?? [])
   const editing = sp.edit ? addresses.find(a => a.id === sp.edit) : undefined
 
   return (
@@ -33,7 +33,7 @@ export default async function AddressesPage({ searchParams }: { searchParams: Pr
           <p className="mt-1 text-sm text-gray-500">Saved shipping or practice locations for faster checkout.</p>
         </div>
         {editing && (
-          <Link href="/account/addresses" className="text-sm font-medium text-[#1a3a5c] hover:underline">Cancel edit</Link>
+          <Link href="/account/addresses" prefetch={false} className="text-sm font-medium text-[#1a3a5c] hover:underline">Cancel edit</Link>
         )}
       </div>
 
@@ -60,7 +60,7 @@ export default async function AddressesPage({ searchParams }: { searchParams: Pr
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-3 text-sm">
-                  <Link href={`/account/addresses?edit=${a.id}`} className="font-medium text-[#1a3a5c] hover:underline">Edit</Link>
+                  <Link href={`/account/addresses?edit=${a.id}`} prefetch={false} className="font-medium text-[#1a3a5c] hover:underline">Edit</Link>
                   {!a.is_default && (
                     <form action={setDefaultAddress}>
                       <input type="hidden" name="id" value={a.id} />
