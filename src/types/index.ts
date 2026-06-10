@@ -60,6 +60,10 @@ export interface Order {
   shipping_address: ShippingAddress
   customer_notes: string | null
   subtotal: number
+  coupon_code?: string | null
+  discount_amount?: number
+  shipping_amount?: number
+  total?: number | null
   created_at: string
   updated_at: string
   items?: OrderItem[]

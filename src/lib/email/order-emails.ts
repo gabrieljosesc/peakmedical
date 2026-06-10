@@ -15,6 +15,10 @@ export type OrderEmailRow = {
   full_name: string
   status: OrderStatus
   subtotal: number | string
+  coupon_code?: string | null
+  discount_amount?: number | string | null
+  shipping_amount?: number | string | null
+  total?: number | string | null
   order_items?: { title: string; quantity: number; unit_price: number | string }[] | null
 }
 
@@ -47,8 +51,20 @@ function itemsTable(o: OrderEmailRow): string {
     `<tr><td style="padding:6px 0;border-bottom:1px solid #f3f4f6;">${escapeHtml(it.title)} × ${it.quantity}</td>
       <td style="padding:6px 0;border-bottom:1px solid #f3f4f6;text-align:right;">${money(Number(it.unit_price) * it.quantity)}</td></tr>`
   ).join('')
-  return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;font-size:14px;">${rows}
-    <tr><td style="padding:8px 0;font-weight:700;">Total</td><td style="padding:8px 0;text-align:right;font-weight:700;">${money(o.subtotal)}</td></tr></table>`
+
+  const discount = Number(o.discount_amount ?? 0)
+  const shipping = Number(o.shipping_amount ?? 0)
+  const grand = o.total != null ? Number(o.total) : Number(o.subtotal) - discount + shipping
+
+  let summary = `<tr><td style="padding:8px 0 2px;">Subtotal</td><td style="padding:8px 0 2px;text-align:right;">${money(o.subtotal)}</td></tr>`
+  if (discount > 0) {
+    const label = o.coupon_code ? `Discount (${escapeHtml(o.coupon_code)})` : 'Discount'
+    summary += `<tr><td style="padding:2px 0;color:#15803d;">${label}</td><td style="padding:2px 0;text-align:right;color:#15803d;">−${money(discount)}</td></tr>`
+  }
+  summary += `<tr><td style="padding:2px 0;">Shipping</td><td style="padding:2px 0;text-align:right;">${shipping > 0 ? money(shipping) : 'Free'}</td></tr>`
+  summary += `<tr><td style="padding:8px 0;font-weight:700;border-top:1px solid #e5e7eb;">Total</td><td style="padding:8px 0;text-align:right;font-weight:700;border-top:1px solid #e5e7eb;">${money(grand)}</td></tr>`
+
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;font-size:14px;">${rows}${summary}</table>`
 }
 
 // ── Customer: order received ────────────────────────────────────────────────

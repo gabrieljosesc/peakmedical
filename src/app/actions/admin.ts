@@ -108,7 +108,7 @@ export async function updateOrderAction(formData: FormData): Promise<void> {
     const svc = createAdminClient()
     const { data: order } = await svc
       .from('orders')
-      .select('id, reference_number, email, full_name, status, subtotal, order_items(title, quantity, unit_price)')
+      .select('id, reference_number, email, full_name, status, subtotal, coupon_code, discount_amount, shipping_amount, total, order_items(title, quantity, unit_price)')
       .eq('id', id)
       .single()
     if (order) {
@@ -152,6 +152,59 @@ export async function upsertBlogPostAction(formData: FormData): Promise<void> {
     revalidatePath('/admin/blog')
     redirect(`/admin/blog/${data.id}?saved=1`)
   }
+}
+
+// ── Coupons ─────────────────────────────────────────────────────────────────
+export async function createCouponAction(formData: FormData): Promise<void> {
+  await requireAdmin()
+  const svc = createAdminClient()
+
+  const code = String(formData.get('code') || '').trim().toUpperCase()
+  const description = String(formData.get('description') || '').trim() || null
+  const kind = String(formData.get('kind')) === 'fixed' ? 'fixed' : 'percent'
+  const value = Number(formData.get('value'))
+  const min_subtotal = Number(formData.get('min_subtotal') || 0)
+  const maxUsesRaw = String(formData.get('max_uses') || '').trim()
+  const max_uses = maxUsesRaw ? Math.max(1, Math.floor(Number(maxUsesRaw))) : null
+  const expiresRaw = String(formData.get('expires_at') || '').trim()
+  const expires_at = expiresRaw ? new Date(`${expiresRaw}T23:59:59`).toISOString() : null
+
+  if (!code || !Number.isFinite(value) || value <= 0) {
+    redirect(`/admin/coupons?error=${encodeURIComponent('Code and a positive value are required.')}`)
+  }
+  if (kind === 'percent' && value > 100) {
+    redirect(`/admin/coupons?error=${encodeURIComponent('Percent discount cannot exceed 100.')}`)
+  }
+
+  const { error } = await svc.from('coupons').insert({
+    code, description, kind, value,
+    min_subtotal: Number.isFinite(min_subtotal) ? Math.max(0, min_subtotal) : 0,
+    max_uses, expires_at,
+  })
+
+  if (error) {
+    const msg = /duplicate|unique/i.test(error.message) ? `Coupon "${code}" already exists.` : error.message
+    redirect(`/admin/coupons?error=${encodeURIComponent(msg)}`)
+  }
+  revalidatePath('/admin/coupons')
+  redirect(`/admin/coupons?saved=1`)
+}
+
+export async function toggleCouponAction(formData: FormData): Promise<void> {
+  await requireAdmin()
+  const svc = createAdminClient()
+  const id = String(formData.get('id'))
+  const active = String(formData.get('active')) === 'true'
+  await svc.from('coupons').update({ is_active: active }).eq('id', id)
+  revalidatePath('/admin/coupons')
+}
+
+export async function deleteCouponAction(formData: FormData): Promise<void> {
+  await requireAdmin()
+  const svc = createAdminClient()
+  const id = String(formData.get('id'))
+  await svc.from('coupons').delete().eq('id', id)
+  revalidatePath('/admin/coupons')
 }
 
 // ── Send password reset to any user ─────────────────────────────────────────

@@ -6,7 +6,9 @@ import Link from 'next/link'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice, generateReferenceNumber } from '@/lib/utils'
 import { productUnitPrice } from '@/lib/price-tiers'
+import { computeShipping, FREE_SHIPPING_THRESHOLD } from '@/lib/shipping'
 import { notifyNewOrder } from '@/app/actions/orders'
+import { validateCoupon, recordCouponUse } from '@/app/actions/coupons'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button'
@@ -15,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, Tag, X } from 'lucide-react'
 
 interface FormData {
   first_name: string
@@ -43,6 +45,34 @@ export default function CheckoutPage() {
   const router = useRouter()
   const [form, setForm] = useState<FormData>(initial)
   const [loading, setLoading] = useState(false)
+
+  const [couponInput, setCouponInput] = useState('')
+  const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null)
+  const [couponLoading, setCouponLoading] = useState(false)
+
+  const discount = coupon ? Math.min(coupon.discount, total) : 0
+  const shipping = computeShipping(total - discount)
+  const grandTotal = Math.max(0, total - discount) + shipping
+
+  async function applyCoupon() {
+    const code = couponInput.trim()
+    if (!code) return
+    setCouponLoading(true)
+    try {
+      const res = await validateCoupon(code, total)
+      if (res.ok) {
+        setCoupon({ code: res.code, discount: res.discount })
+        setCouponInput('')
+        toast.success(`Coupon ${res.code} applied — you save ${formatPrice(res.discount)}`)
+      } else {
+        toast.error(res.error)
+      }
+    } catch {
+      toast.error('Could not validate coupon. Please try again.')
+    } finally {
+      setCouponLoading(false)
+    }
+  }
 
   if (items.length === 0) {
     return (
@@ -76,6 +106,24 @@ export default function CheckoutPage() {
     const ref = generateReferenceNumber()
 
     try {
+      // Re-validate the coupon server-side at placement time (authoritative)
+      let appliedCode: string | null = null
+      let appliedDiscount = 0
+      if (coupon) {
+        const res = await validateCoupon(coupon.code, total)
+        if (res.ok) {
+          appliedCode = res.code
+          appliedDiscount = Math.min(res.discount, total)
+        } else {
+          setCoupon(null)
+          toast.error(`Coupon removed: ${res.error}`)
+          setLoading(false)
+          return
+        }
+      }
+      const shippingAmount = computeShipping(total - appliedDiscount)
+      const orderTotal = Math.max(0, total - appliedDiscount) + shippingAmount
+
       const { data: order, error } = await supabase
         .from('orders')
         .insert({
@@ -83,6 +131,10 @@ export default function CheckoutPage() {
           reference_number: ref,
           status: 'pending_csr',
           subtotal: total,
+          coupon_code: appliedCode,
+          discount_amount: appliedDiscount,
+          shipping_amount: shippingAmount,
+          total: orderTotal,
           email: form.email,
           full_name: `${form.first_name} ${form.last_name}`,
           phone: form.phone || null,
@@ -117,6 +169,7 @@ export default function CheckoutPage() {
 
       // Fire order notifications (customer + admin); don't block on result
       void notifyNewOrder(order.id)
+      if (appliedCode) void recordCouponUse(appliedCode)
 
       clearCart()
       router.push(`/order-confirmed?ref=${ref}`)
@@ -217,9 +270,74 @@ export default function CheckoutPage() {
                 ))}
               </div>
               <Separator className="mb-4" />
+
+              {/* Coupon */}
+              {coupon ? (
+                <div className="mb-4 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm">
+                  <span className="flex items-center gap-1.5 font-medium text-green-800">
+                    <Tag className="w-3.5 h-3.5" /> {coupon.code}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCoupon(null)}
+                    className="text-green-700 hover:text-green-900"
+                    aria-label="Remove coupon"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="mb-4 flex gap-2">
+                  <Input
+                    value={couponInput}
+                    onChange={e => setCouponInput(e.target.value.toUpperCase())}
+                    placeholder="Coupon code"
+                    className="font-mono uppercase"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        applyCoupon()
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={couponLoading || !couponInput.trim()}
+                    onClick={applyCoupon}
+                    className="flex-shrink-0"
+                  >
+                    {couponLoading ? '...' : 'Apply'}
+                  </Button>
+                </div>
+              )}
+
+              {/* Totals */}
+              <div className="space-y-1.5 text-sm mb-3">
+                <div className="flex justify-between text-gray-600">
+                  <span>Subtotal</span>
+                  <span>{formatPrice(total)}</span>
+                </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-green-700">
+                    <span>Discount ({coupon?.code})</span>
+                    <span>−{formatPrice(discount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-gray-600">
+                  <span>Shipping</span>
+                  <span>{shipping === 0 ? <span className="font-medium text-green-700">Free</span> : formatPrice(shipping)}</span>
+                </div>
+                {shipping > 0 && (
+                  <p className="text-xs text-gray-400">
+                    Free shipping on orders over {formatPrice(FREE_SHIPPING_THRESHOLD)}
+                  </p>
+                )}
+              </div>
+              <Separator className="mb-3" />
               <div className="flex justify-between font-bold text-gray-900 mb-5">
                 <span>Total</span>
-                <span>{formatPrice(total)}</span>
+                <span>{formatPrice(grandTotal)}</span>
               </div>
               <Button
                 type="submit"

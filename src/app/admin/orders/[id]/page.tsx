@@ -129,9 +129,25 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Pro
             </li>
           ))}
         </ul>
-        <div className="mt-4 flex justify-between border-t border-gray-100 pt-3 font-semibold text-gray-900">
-          <span>Total</span>
-          <span>{formatPrice(Number(order.subtotal))}</span>
+        <div className="mt-4 space-y-1 border-t border-gray-100 pt-3 text-sm">
+          <div className="flex justify-between text-gray-600">
+            <span>Subtotal</span>
+            <span>{formatPrice(Number(order.subtotal))}</span>
+          </div>
+          {Number(order.discount_amount ?? 0) > 0 && (
+            <div className="flex justify-between text-green-700">
+              <span>Discount{order.coupon_code ? ` (${order.coupon_code})` : ''}</span>
+              <span>−{formatPrice(Number(order.discount_amount))}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-gray-600">
+            <span>Shipping</span>
+            <span>{Number(order.shipping_amount ?? 0) > 0 ? formatPrice(Number(order.shipping_amount)) : 'Free'}</span>
+          </div>
+          <div className="flex justify-between pt-1.5 font-semibold text-gray-900 border-t border-gray-100">
+            <span>Total</span>
+            <span>{formatPrice(Number(order.total ?? order.subtotal))}</span>
+          </div>
         </div>
       </section>
 
