@@ -13,7 +13,7 @@ import { safeNext } from '@/lib/safe-redirect'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = safeNext(searchParams.get('next')) ?? '/account'
+  const next = safeNext(searchParams.get('next')) ?? '/account/profile'
 
   if (!code) {
     return NextResponse.redirect(`${origin}/auth/login`)

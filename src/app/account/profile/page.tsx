@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/auth'
 import { ProfileForms } from './profile-forms'
 
 export const metadata: Metadata = { title: 'Profile' }
@@ -13,9 +14,8 @@ function maskEmail(e: string): string {
 }
 
 export default async function ProfilePage() {
+  const user = await requireAuthUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   const email = profile?.email ?? user.email ?? ''

@@ -70,9 +70,8 @@ export async function registerAction(
     password: v.password,
     options: {
       data: { full_name: fullName },
-      // After email confirmation, land on the login page (email is already
-      // confirmed by Supabase server-side before this redirect).
-      emailRedirectTo: `${siteUrl}/auth/login?verified=1`,
+      // PKCE: exchange code in /auth/callback, then land on profile signed in.
+      emailRedirectTo: `${siteUrl}/auth/callback?next=/account/profile`,
     },
   })
 
@@ -138,7 +137,7 @@ export async function loginAction(
 ): Promise<LoginState> {
   const email    = String(formData.get('email')    ?? '').trim()
   const password = String(formData.get('password') ?? '')
-  const next     = String(formData.get('next')     ?? '/account')
+  const next     = String(formData.get('next')     ?? '/account/profile')
 
   if (!email || !password) return { error: 'Email and password are required.' }
 
@@ -156,7 +155,7 @@ export async function loginAction(
   }
 
   revalidatePath('/', 'layout')
-  redirect(next || '/account')
+  redirect(next || '/account/profile')
 }
 
 // ── Forgot password ───────────────────────────────────────────────────────

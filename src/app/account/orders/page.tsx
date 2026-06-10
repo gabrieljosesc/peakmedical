@@ -1,6 +1,6 @@
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/auth'
 import { Order } from '@/types'
 import { formatPrice } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
@@ -15,9 +15,8 @@ const statusColors: Record<string, string> = {
 }
 
 export default async function OrdersPage() {
+  const user = await requireAuthUser('/account/orders')
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
 
   const { data: orders } = await supabase
     .from('orders')

@@ -6,8 +6,8 @@ import { WishlistProvider } from '@/hooks/useWishlist'
 import { Toaster } from '@/components/ui/sonner'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/auth'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -32,8 +32,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
 
   const admin = createAdminClient()
   const { data: categories } = await admin

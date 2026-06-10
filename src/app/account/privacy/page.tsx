@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/auth'
 import { PrivacyForm } from './privacy-form'
 
 export const metadata: Metadata = { title: 'Privacy' }
 export const dynamic = 'force-dynamic'
 
 export default async function PrivacyPage() {
+  const user = await requireAuthUser('/account/privacy')
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
 
   const { data: profile } = await supabase
     .from('profiles')

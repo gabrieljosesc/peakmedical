@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/auth'
 import { deleteAddress, setDefaultAddress } from '@/app/actions/account'
 import { AddressEditor } from './address-editor'
 
@@ -11,9 +12,8 @@ type SearchParams = { edit?: string }
 
 export default async function AddressesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams
+  const user = await requireAuthUser('/account/addresses')
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
 
   const { data: rows } = await supabase
     .from('user_addresses')

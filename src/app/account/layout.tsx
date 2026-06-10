@@ -1,12 +1,13 @@
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/auth'
 import { AccountSidebar } from '@/components/account/AccountSidebar'
 import { AccountMobileTabs } from '@/components/account/AccountMobileTabs'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
+  const user = await requireAuthUser('/account/profile')
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login?redirectTo=/account')
 
   const { data: profile } = await supabase
     .from('profiles')

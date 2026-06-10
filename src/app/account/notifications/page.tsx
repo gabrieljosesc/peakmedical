@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/auth'
 import { NotificationsForm } from './notifications-form'
 
 export const metadata: Metadata = { title: 'Notifications' }
 export const dynamic = 'force-dynamic'
 
 export default async function NotificationsPage() {
+  const user = await requireAuthUser('/account/notifications')
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
 
   const { data: profile } = await supabase
     .from('profiles')
