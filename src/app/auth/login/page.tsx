@@ -12,7 +12,8 @@ import { CheckCircle } from 'lucide-react'
 function LoginForm() {
   const searchParams = useSearchParams()
   const registered = searchParams.get('registered') === '1'
-  const next = searchParams.get('next') ?? '/account'
+  const verified = searchParams.get('verified') === '1'
+  const next = searchParams.get('next') ?? searchParams.get('redirectTo') ?? '/account'
 
   const [state, action, pending] = useActionState(loginAction, null)
   const error = state && 'error' in state ? state.error : null
@@ -24,8 +25,16 @@ function LoginForm() {
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h1>
         <p className="text-sm text-gray-500 mb-6">Sign in to your account</p>
 
+        {/* Email verified banner */}
+        {verified && (
+          <div className="mb-5 flex items-start gap-2.5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span>Your email has been verified! Please sign in below.</span>
+          </div>
+        )}
+
         {/* Registration success banner */}
-        {registered && (
+        {registered && !verified && (
           <div className="mb-5 flex items-start gap-2.5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
             <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <span>

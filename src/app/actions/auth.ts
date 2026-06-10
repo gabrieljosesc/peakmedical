@@ -70,7 +70,9 @@ export async function registerAction(
     password: v.password,
     options: {
       data: { full_name: fullName },
-      emailRedirectTo: `${siteUrl}/auth/callback?next=/account`,
+      // After email confirmation, land on the login page (email is already
+      // confirmed by Supabase server-side before this redirect).
+      emailRedirectTo: `${siteUrl}/auth/login?verified=1`,
     },
   })
 
