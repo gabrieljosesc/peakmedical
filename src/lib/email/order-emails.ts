@@ -90,8 +90,13 @@ export async function sendAdminNewOrderEmail(o: OrderEmailRow): Promise<void> {
     <p style="margin:0 0 4px;"><strong>Customer:</strong> ${escapeHtml(o.full_name)} (${escapeHtml(o.email)})</p>
     ${itemsTable(o)}
     <p style="margin:12px 0 0;"><a href="${SITE_URL}/admin/orders/${o.id}" style="color:#1a3a5c;">Open in admin →</a></p>`
+  // ADMIN_NOTIFY_EMAILS: comma-separated extra inboxes (e.g. a Gmail copy)
+  const extraEmails = (process.env.ADMIN_NOTIFY_EMAILS ?? '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
   await sendTransactionalEmail({
-    to: SITE_EMAIL,
+    to: [SITE_EMAIL, ...extraEmails],
     subject: `New order ${ref(o)} — ${money(o.subtotal)}`,
     html: layout(body),
     text: `New order ${ref(o)} from ${o.full_name} (${o.email}). Total ${money(o.subtotal)}. ${SITE_URL}/admin/orders/${o.id}`,
