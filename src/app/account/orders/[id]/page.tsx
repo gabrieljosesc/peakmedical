@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { getAccountUser } from '@/lib/supabase/auth'
 import { Order, OrderItem } from '@/types'
@@ -14,6 +15,17 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-red-100 text-red-800',
 }
 
+const statusLabels: Record<string, string> = {
+  pending_csr: 'Pending Review',
+  confirmed: 'Confirmed',
+  shipped: 'Shipped',
+  cancelled: 'Cancelled',
+}
+
+type ItemWithProduct = OrderItem & {
+  product?: { slug: string; images?: { url: string; sort_order: number }[] } | null
+}
+
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const user = await getAccountUser()
@@ -21,7 +33,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   const { data: order } = await supabase
     .from('orders')
-    .select('*, items:order_items(*)')
+    .select('*, items:order_items(*, product:products(slug, images:product_images(url, sort_order)))')
     .eq('id', id)
     .eq('user_id', user.id)
     .single()
@@ -48,18 +60,32 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <div className="bg-white rounded-xl border p-5">
             <h2 className="font-semibold text-gray-800 mb-4">Items Ordered</h2>
             <div className="space-y-4">
-              {(order.items as OrderItem[]).map(item => (
-                <div key={item.id} className="flex gap-3">
-                  <div className="relative w-16 h-16 flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden">
-                    <div className="absolute inset-0 bg-gray-100" />
+              {(order.items as ItemWithProduct[]).map(item => {
+                const imageUrl = item.product?.images?.[0]?.url ?? null
+                const slug = item.product?.slug ?? null
+                return (
+                  <div key={item.id} className="flex gap-3">
+                    <div className="relative w-16 h-16 flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
+                      {imageUrl ? (
+                        <Image src={imageUrl} alt={item.title} fill className="object-contain p-1.5" sizes="64px" />
+                      ) : (
+                        <div className="absolute inset-0 bg-gray-100" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {slug ? (
+                        <Link href={`/product/${slug}`} className="text-sm font-medium text-gray-800 line-clamp-2 hover:text-[#1a3a5c]">
+                          {item.title}
+                        </Link>
+                      ) : (
+                        <p className="text-sm font-medium text-gray-800 line-clamp-2">{item.title}</p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-0.5">Qty: {item.quantity} × {formatPrice(item.unit_price)}</p>
+                    </div>
+                    <p className="font-semibold text-sm text-gray-800 flex-shrink-0">{formatPrice(item.unit_price * item.quantity)}</p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 line-clamp-2">{item.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Qty: {item.quantity} × {formatPrice(item.unit_price)}</p>
-                  </div>
-                  <p className="font-semibold text-sm text-gray-800 flex-shrink-0">{formatPrice(item.unit_price * item.quantity)}</p>
-                </div>
-              ))}
+                )
+              })}
             </div>
             <Separator className="my-4" />
             <div className="space-y-1.5 text-sm">
@@ -104,8 +130,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         <div>
           <div className="bg-white rounded-xl border p-5 space-y-3">
             <h2 className="font-semibold text-gray-800">Order Status</h2>
-            <span className={`inline-block text-sm font-medium px-3 py-1.5 rounded-full capitalize ${statusColors[order.status]}`}>
-              {order.status}
+            <span className={`inline-block text-sm font-medium px-3 py-1.5 rounded-full ${statusColors[order.status]}`}>
+              {statusLabels[order.status] ?? order.status}
             </span>
             <p className="text-xs text-gray-500">
               Placed {new Date(order.created_at).toLocaleDateString('en-US', {
