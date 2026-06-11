@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { sendTransactionalEmail } from '@/lib/email/resend'
+import { sendTransactionalEmail } from '@/lib/email/send'
 
 const SITE_EMAIL = process.env.NOTIFICATION_EMAIL?.trim() || 'info@peakmedicalwholesale.com'
 const SITE_PHONE = '+1-888-222-0373'

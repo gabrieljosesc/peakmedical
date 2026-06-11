@@ -144,7 +144,9 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   await svc.from('order_items').insert(orderItems.map(it => ({ ...it, order_id: order.id })))
 
   if (couponCode) void recordCouponUse(couponCode)
-  void notifyNewOrder(order.id)
+  // Await so the SMTP send completes before the serverless function freezes.
+  // notifyNewOrder never throws, so a mail failure can't break the order.
+  await notifyNewOrder(order.id)
 
   return { ok: true, reference }
 }

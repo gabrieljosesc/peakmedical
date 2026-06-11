@@ -112,7 +112,12 @@ export async function updateOrderAction(formData: FormData): Promise<void> {
       .eq('id', id)
       .single()
     if (order) {
-      void sendOrderStatusEmail(order as unknown as OrderEmailRow, status as OrderStatus)
+      // Await so the SMTP send completes before the serverless function freezes.
+      try {
+        await sendOrderStatusEmail(order as unknown as OrderEmailRow, status as OrderStatus)
+      } catch (e) {
+        console.error('[updateOrderAction] status email failed:', e)
+      }
     }
   }
 
