@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { sendOrderReceivedEmail, sendAdminNewOrderEmail, type OrderEmailRow } from '@/lib/email/order-emails'
 import { validateCoupon, recordCouponUse } from '@/app/actions/coupons'
 import { computeShipping } from '@/lib/shipping'
+import { meetsCheckoutMinimumUsd, MIN_CHECKOUT_SUBTOTAL_USD } from '@/lib/cart-minimum'
 import { unitPriceForQuantity, parsePriceTiers } from '@/lib/price-tiers'
 import { encryptCardCvv } from '@/lib/payment-card-crypto'
 import { generateReferenceNumber } from '@/lib/utils'
@@ -19,6 +20,7 @@ export type PlaceOrderInput = {
   couponCode?: string
   customerNotes?: string
   paymentNotes?: string
+  policyAccepted?: boolean
 }
 
 export type PlaceOrderResult = { ok: true; reference: string } | { ok: false; message: string }
@@ -69,6 +71,9 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     orderItems.push({ product_id: p.id, title: p.title, quantity: qty, unit_price: unit })
   }
   if (subtotal <= 0) return { ok: false, message: 'Order total must be greater than zero.' }
+  if (!meetsCheckoutMinimumUsd(subtotal)) {
+    return { ok: false, message: `Minimum order is $${MIN_CHECKOUT_SUBTOTAL_USD.toFixed(2)}. Add more items before checking out.` }
+  }
 
   // Coupon (server-validated)
   let couponCode: string | null = null
@@ -124,6 +129,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
       },
       customer_notes: input.customerNotes || null,
       payment_notes: input.paymentNotes || null,
+      policy_acknowledged_at: input.policyAccepted ? new Date().toISOString() : null,
       payment_card_snapshot: {
         brand: card.brand, last4: card.last4,
         exp_month: card.exp_month, exp_year: card.exp_year,

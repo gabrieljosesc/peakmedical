@@ -6,12 +6,17 @@ import { Trash2, Minus, Plus, ShoppingCart } from 'lucide-react'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/utils'
 import { productUnitPrice } from '@/lib/price-tiers'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { meetsCheckoutMinimumUsd } from '@/lib/cart-minimum'
+import { CartMinimumBar } from '@/components/CartMinimumBar'
+import { buttonVariants } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 
 export default function CartPage() {
-  const { items, total, updateQuantity, removeFromCart } = useCart()
+  const {
+    items, selectedItems, selectedTotal,
+    updateQuantity, removeFromCart, toggleSelected, setAllSelected,
+  } = useCart()
 
   if (items.length === 0) {
     return (
@@ -26,19 +31,52 @@ export default function CartPage() {
     )
   }
 
-  const freeShipping = total >= 250
+  const allSelected = selectedItems.length === items.length
+  const minimumMet = meetsCheckoutMinimumUsd(selectedTotal)
+  const canCheckout = selectedItems.length > 0 && minimumMet
+  const freeShipping = selectedTotal >= 250
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Shopping Cart</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">Shopping Cart</h1>
+
+      {/* Minimum-order progress (based on selected items, same as checkout) */}
+      <div className="mb-6">
+        <CartMinimumBar amountUsd={selectedTotal} />
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Items */}
         <div className="lg:col-span-2 space-y-3">
+          <label className="flex items-center gap-2 px-1 text-sm text-gray-600 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={e => setAllSelected(e.target.checked)}
+              className="size-4 rounded border-gray-400 accent-[#1a3a5c]"
+            />
+            <span>Select all ({items.length} item{items.length !== 1 ? 's' : ''})</span>
+          </label>
+
           {items.map(item => {
             const imageUrl = item.product.images?.[0]?.url ?? null
             const unitPrice = productUnitPrice(item.product, item.quantity)
+            const selected = item.selected !== false
             return (
-              <div key={item.id} className="bg-white rounded-lg border p-4 flex gap-4">
+              <div
+                key={item.id}
+                className={cn(
+                  'bg-white rounded-lg border p-4 flex gap-3 items-start transition-opacity',
+                  !selected && 'opacity-60'
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  onChange={() => toggleSelected(item.product_id)}
+                  aria-label={`Include ${item.product.title} in checkout`}
+                  className="mt-8 size-4 flex-shrink-0 rounded border-gray-400 accent-[#1a3a5c] cursor-pointer"
+                />
                 <div className="relative w-20 h-20 flex-shrink-0 bg-gray-50 rounded-md overflow-hidden">
                   {imageUrl ? (
                     <Image src={imageUrl} alt={item.product.title} fill className="object-contain p-2" />
@@ -94,8 +132,12 @@ export default function CartPage() {
             <h2 className="font-semibold text-gray-800 mb-4">Order Summary</h2>
             <div className="space-y-2 text-sm mb-4">
               <div className="flex justify-between text-gray-600">
-                <span>Subtotal</span>
-                <span>{formatPrice(total)}</span>
+                <span>Selected items</span>
+                <span>{selectedItems.length} of {items.length}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Subtotal (selected)</span>
+                <span>{formatPrice(selectedTotal)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Shipping</span>
@@ -104,19 +146,37 @@ export default function CartPage() {
                 </span>
               </div>
             </div>
-            {!freeShipping && (
+            {!freeShipping && selectedTotal > 0 && (
               <p className="text-xs text-blue-600 bg-blue-50 rounded p-2 mb-4">
-                Add {formatPrice(250 - total)} more for free shipping!
+                Add {formatPrice(250 - selectedTotal)} more for free shipping!
               </p>
             )}
             <Separator className="mb-4" />
             <div className="flex justify-between font-bold text-gray-900 mb-5">
               <span>Total</span>
-              <span>{formatPrice(total)}</span>
+              <span>{formatPrice(selectedTotal)}</span>
             </div>
-            <Link href="/checkout" className={cn(buttonVariants({ size: 'lg' }), 'w-full justify-center bg-[#1a3a5c] hover:bg-[#152f4a]')}>
-              Proceed to Checkout
-            </Link>
+
+            {canCheckout ? (
+              <Link href="/checkout" className={cn(buttonVariants({ size: 'lg' }), 'w-full justify-center bg-[#1a3a5c] hover:bg-[#152f4a]')}>
+                Proceed to Checkout
+              </Link>
+            ) : (
+              <button
+                disabled
+                className={cn(buttonVariants({ size: 'lg' }), 'w-full justify-center bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300')}
+                title={selectedItems.length === 0 ? 'Select at least one item' : 'Minimum order not reached'}
+              >
+                Proceed to Checkout
+              </button>
+            )}
+            {!canCheckout && (
+              <p className="mt-2 text-center text-xs text-amber-700">
+                {selectedItems.length === 0
+                  ? 'Select at least one item to check out.'
+                  : 'Reach the minimum order amount to check out.'}
+              </p>
+            )}
             <Link href="/shop" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'w-full justify-center mt-2')}>
               Continue Shopping
             </Link>

@@ -6,6 +6,7 @@ import { WishlistProvider } from '@/hooks/useWishlist'
 import { Toaster } from '@/components/ui/sonner'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import { FloatingCart } from '@/components/FloatingCart'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/auth'
 
@@ -68,6 +69,7 @@ export default async function RootLayout({
               {children}
             </main>
             <Footer />
+            <FloatingCart />
             <Toaster position="top-right" richColors />
           </WishlistProvider>
         </CartProvider>

@@ -54,6 +54,8 @@ export interface CartItem {
   product_id: string
   quantity: number
   product: Product
+  /** Included in checkout. Defaults to true; older stored carts may omit it. */
+  selected?: boolean
 }
 
 export interface Order {

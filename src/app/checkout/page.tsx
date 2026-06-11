@@ -7,6 +7,8 @@ import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/utils'
 import { productUnitPrice } from '@/lib/price-tiers'
 import { computeShipping, FREE_SHIPPING_THRESHOLD } from '@/lib/shipping'
+import { meetsCheckoutMinimumUsd } from '@/lib/cart-minimum'
+import { CartMinimumBar } from '@/components/CartMinimumBar'
 import { placeOrder } from '@/app/actions/orders'
 import { validateCoupon } from '@/app/actions/coupons'
 import { createClient } from '@/lib/supabase/client'
@@ -42,7 +44,7 @@ function shippingLine(s: Shipping) {
 }
 
 export default function CheckoutPage() {
-  const { items, total, clearCart } = useCart()
+  const { items, selectedItems, selectedTotal, clearSelected } = useCart()
   const router = useRouter()
 
   const [loading, setLoading] = useState(false)
@@ -60,6 +62,8 @@ export default function CheckoutPage() {
   const [cvv, setCvv] = useState('')
 
   const [customerNotes, setCustomerNotes] = useState('')
+  const [paymentNotes, setPaymentNotes] = useState('')
+  const [policyAccepted, setPolicyAccepted] = useState(false)
   const [couponInput, setCouponInput] = useState('')
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null)
   const [couponLoading, setCouponLoading] = useState(false)
@@ -68,6 +72,9 @@ export default function CheckoutPage() {
   const selectedCard = usableCards.find(c => c.id === selectedCardId) ?? usableCards[0] ?? null
   const hasUsableCard = usableCards.length > 0
 
+  // Checkout operates on SELECTED cart lines only (same as MedicaPlanet)
+  const total = selectedTotal
+  const minimumMet = meetsCheckoutMinimumUsd(total)
   const discount = coupon ? Math.min(coupon.discount, total) : 0
   const shippingAmount = computeShipping(total - discount)
   const grandTotal = Math.max(0, total - discount) + shippingAmount
@@ -149,19 +156,23 @@ export default function CheckoutPage() {
     if (!selectedCard) { setError('Add a non-expired card on file before placing this order.'); return }
     if (missingShipping.length) { setError(`Complete the shipping address: ${missingShipping.join(', ')}.`); return }
     if (cvv.trim().length < 3) { setError('Enter the CVV from your card.'); return }
+    if (!minimumMet) { setError('Minimum order not reached. Add more items before checking out.'); return }
+    if (!policyAccepted) { setError('Please confirm the professional-use acknowledgement.'); return }
 
     setLoading(true)
     const res = await placeOrder({
       shipping,
-      items: items.map(i => ({ slug: i.product.slug, quantity: i.quantity })),
+      items: selectedItems.map(i => ({ slug: i.product.slug, quantity: i.quantity })),
       cardId: selectedCard.id,
       cvv: cvv.trim(),
       couponCode: coupon?.code,
       customerNotes,
+      paymentNotes: paymentNotes.trim() || undefined,
+      policyAccepted,
     })
     setLoading(false)
     if (!res.ok) { setError(res.message); toast.error(res.message); return }
-    clearCart()
+    clearSelected()
     router.push(`/order-confirmed?ref=${res.reference}`)
   }
 
@@ -171,6 +182,17 @@ export default function CheckoutPage() {
         <ShoppingCart className="w-16 h-16 text-gray-200 mx-auto mb-4" />
         <h1 className="text-2xl font-bold text-gray-800 mb-2">Your cart is empty</h1>
         <Link href="/shop" className={cn(buttonVariants(), 'bg-[#1a3a5c] hover:bg-[#152f4a]')}>Browse Products</Link>
+      </div>
+    )
+  }
+
+  if (selectedItems.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-20 text-center">
+        <ShoppingCart className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">No items selected</h1>
+        <p className="text-gray-500 mb-6">Go back to your cart and select the product(s) you want to order.</p>
+        <Link href="/cart" className={cn(buttonVariants(), 'bg-[#1a3a5c] hover:bg-[#152f4a]')}>Back to Cart</Link>
       </div>
     )
   }
@@ -209,6 +231,11 @@ export default function CheckoutPage() {
         <Link href="/legal/shipping-cold-chain" className="underline hover:no-underline">Shipping &amp; Cold-Chain Policy</Link>, and{' '}
         <Link href="/legal/returns" className="underline hover:no-underline">Return policy</Link>.
       </p>
+
+      {/* Minimum-order progress (selected items) */}
+      <div className="mt-6">
+        <CartMinimumBar amountUsd={total} />
+      </div>
 
       <form onSubmit={handleSubmit} className="mt-6 grid lg:grid-cols-[1fr_22rem] gap-6">
         <div className="space-y-5">
@@ -325,16 +352,29 @@ export default function CheckoutPage() {
           <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <p className="text-sm font-semibold text-gray-900">Order notes</p>
             <p className="mt-1 text-xs text-gray-500">No card is charged at submit. Once your order is approved, our team processes payment using your card on file.</p>
-            <textarea value={customerNotes} onChange={e => setCustomerNotes(e.target.value)} rows={3} placeholder="Any special instructions…" className="mt-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c] resize-none" />
+            <div className="mt-3">
+              <label className="text-xs font-medium text-gray-600">Order notes</label>
+              <textarea value={customerNotes} onChange={e => setCustomerNotes(e.target.value)} rows={3} placeholder="Any special instructions…" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c] resize-none" />
+            </div>
+            <div className="mt-3">
+              <label className="text-xs font-medium text-gray-600">Payment / callback notes (optional)</label>
+              <textarea value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)} rows={2} placeholder="Best time to call, billing contact, PO number…" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c] resize-none" />
+            </div>
           </section>
 
           <label className="flex items-start gap-2 text-xs text-gray-700">
-            <input type="checkbox" required className="mt-0.5 size-4 rounded border-gray-400 accent-[#1a3a5c]" />
+            <input
+              type="checkbox"
+              required
+              checked={policyAccepted}
+              onChange={e => setPolicyAccepted(e.target.checked)}
+              className="mt-0.5 size-4 rounded border-gray-400 accent-[#1a3a5c]"
+            />
             <span>I confirm this purchase is for authorized professional use and that product handling at delivery will follow required storage and local regulatory standards.</span>
           </label>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button type="submit" size="lg" disabled={loading || !hasUsableCard} className="bg-[#1a3a5c] hover:bg-[#152f4a]">
+          <Button type="submit" size="lg" disabled={loading || !hasUsableCard || !minimumMet} className="bg-[#1a3a5c] hover:bg-[#152f4a]">
             {loading ? 'Placing Order…' : 'Place Order'}
           </Button>
         </div>
@@ -344,7 +384,7 @@ export default function CheckoutPage() {
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h2 className="font-semibold text-gray-800 mb-4">Your Order</h2>
             <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-              {items.map(item => (
+              {selectedItems.map(item => (
                 <div key={item.id} className="flex justify-between text-sm gap-2">
                   <span className="text-gray-600 line-clamp-2">{item.product.title} × {item.quantity}</span>
                   <span className="font-medium flex-shrink-0">{formatPrice(productUnitPrice(item.product, item.quantity) * item.quantity)}</span>

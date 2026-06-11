@@ -98,6 +98,13 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Pro
           <p className="text-sm text-gray-600">{order.email}</p>
           {order.phone && <p className="text-sm text-gray-600">{order.phone}</p>}
           <p className="mt-1 text-xs text-gray-400">Placed: {new Date(order.created_at).toLocaleString()}</p>
+          <p className="mt-0.5 text-xs">
+            {order.policy_acknowledged_at ? (
+              <span className="text-green-700">Policy acknowledged · {new Date(order.policy_acknowledged_at).toLocaleString()}</span>
+            ) : (
+              <span className="text-amber-700">Policy acknowledgement not recorded</span>
+            )}
+          </p>
           {!order.user_id && <p className="mt-1 text-xs text-amber-600">Guest order (no account)</p>}
         </section>
 
