@@ -7,7 +7,7 @@ import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/utils'
 import { productUnitPrice } from '@/lib/price-tiers'
 import { meetsCheckoutMinimumUsd } from '@/lib/cart-minimum'
-import { FREE_SHIPPING_THRESHOLD } from '@/lib/shipping'
+import { computeShipping, FREE_SHIPPING_THRESHOLD, SHIPPING_RATES_TEXT } from '@/lib/shipping'
 import { CartMinimumBar } from '@/components/CartMinimumBar'
 import { buttonVariants } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -35,7 +35,9 @@ export default function CartPage() {
   const allSelected = selectedItems.length === items.length
   const minimumMet = meetsCheckoutMinimumUsd(selectedTotal)
   const canCheckout = selectedItems.length > 0 && minimumMet
-  const freeShipping = selectedTotal >= FREE_SHIPPING_THRESHOLD
+  // Estimated by amount tier; first-time customers ship free (applied at checkout)
+  const estimatedShipping = computeShipping(selectedTotal)
+  const freeShipping = estimatedShipping === 0 && selectedTotal > 0
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -141,11 +143,12 @@ export default function CartPage() {
                 <span>{formatPrice(selectedTotal)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
-                <span>Shipping</span>
+                <span>Shipping (estimated)</span>
                 <span className={freeShipping ? 'text-green-600 font-medium' : ''}>
-                  {freeShipping ? 'FREE' : 'Calculated at checkout'}
+                  {freeShipping ? 'FREE' : formatPrice(estimatedShipping)}
                 </span>
               </div>
+              <p className="text-xs text-gray-500 pt-1">{SHIPPING_RATES_TEXT} First order ships free.</p>
             </div>
             {!freeShipping && selectedTotal > 0 && (
               <p className="text-xs text-blue-600 bg-blue-50 rounded p-2 mb-4">
@@ -154,8 +157,8 @@ export default function CartPage() {
             )}
             <Separator className="mb-4" />
             <div className="flex justify-between font-bold text-gray-900 mb-5">
-              <span>Total</span>
-              <span>{formatPrice(selectedTotal)}</span>
+              <span>Estimated total</span>
+              <span>{formatPrice(selectedTotal + estimatedShipping)}</span>
             </div>
 
             {canCheckout ? (

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/utils'
 import { productUnitPrice } from '@/lib/price-tiers'
-import { computeShipping, FREE_SHIPPING_THRESHOLD } from '@/lib/shipping'
+import { computeShipping, SHIPPING_RATES_TEXT } from '@/lib/shipping'
 import { meetsCheckoutMinimumUsd } from '@/lib/cart-minimum'
 import { CartMinimumBar } from '@/components/CartMinimumBar'
 import { placeOrder, isFirstOrder } from '@/app/actions/orders'
@@ -456,7 +456,7 @@ export default function CheckoutPage() {
               {discount > 0 && <div className="flex justify-between text-green-700"><span>Discount ({coupon?.code})</span><span>−{formatPrice(discount)}</span></div>}
               <div className="flex justify-between text-gray-600"><span>Shipping</span><span>{shippingAmount === 0 ? <span className="font-medium text-green-700">Free</span> : formatPrice(shippingAmount)}</span></div>
               {firstOrder && shippingAmount === 0 && <p className="text-xs text-green-700">Complimentary shipping — your first order ships free.</p>}
-              {shippingAmount > 0 && <p className="text-xs text-gray-400">Free shipping on orders over {formatPrice(FREE_SHIPPING_THRESHOLD)}</p>}
+              <p className="text-xs text-gray-500">{SHIPPING_RATES_TEXT}</p>
             </div>
             <Separator className="mb-3" />
             <div className="flex justify-between font-bold text-gray-900"><span>Total</span><span>{formatPrice(grandTotal)}</span></div>

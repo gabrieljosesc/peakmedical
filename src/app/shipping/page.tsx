@@ -10,7 +10,7 @@ export default function ShippingPage() {
 
       <div className="grid sm:grid-cols-3 gap-4 mb-10">
         {[
-          { icon: Truck, t: 'Free over $800', d: 'First order ships free; complimentary on all orders over $800.' },
+          { icon: Truck, t: 'Free over $800', d: 'First order free · $50 on $500+ · $100 under $500.' },
           { icon: ThermometerSnowflake, t: 'Cold chain', d: 'Validated insulated packaging for sensitive items.' },
           { icon: ShieldCheck, t: 'Safe delivery', d: 'Tracked, insured, and securely packed.' },
         ].map(({ icon: Icon, t, d }) => (
@@ -24,7 +24,7 @@ export default function ShippingPage() {
 
       <div className="prose prose-gray max-w-none text-gray-700 text-sm leading-relaxed space-y-4">
         <p>Orders are processed after our team confirms payment and shipping details with you, typically within 24 business hours of checkout.</p>
-        <p>Your first order ships free. After that, free shipping applies to all orders over $800; orders below that threshold ship at a flat $50 rate.</p>
+        <p>Your first order ships free. After that, shipping is free on orders of $800 or more, $50 on orders of $500–$800, and $100 on orders under $500.</p>
         <p>Temperature-sensitive products (such as viscosupplements and certain injectables) are shipped using validated cold-chain packaging to preserve product integrity in line with manufacturer instructions.</p>
         <p>For questions about a specific shipment, contact us at <a href="mailto:info@peakmedicalwholesale.com" className="text-[#1a3a5c] hover:underline">info@peakmedicalwholesale.com</a> or call +1-888-222-0373.</p>
       </div>
