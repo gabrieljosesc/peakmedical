@@ -41,6 +41,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   if (!order) notFound()
 
   const addr = order.shipping_address as Order['shipping_address']
+  const billing = (order.billing_address ?? null) as Order['shipping_address'] | null
+  const hasBilling = Boolean(billing?.address_line1)
 
   return (
     <div>
@@ -111,18 +113,34 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
           </div>
 
-          {/* Shipping address */}
-          <div className="bg-white rounded-xl border p-5">
-            <h2 className="font-semibold text-gray-800 mb-3">Shipping Address</h2>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              {addr.first_name} {addr.last_name}<br />
-              {addr.company && <>{addr.company}<br /></>}
-              {addr.address_line1}<br />
-              {addr.address_line2 && <>{addr.address_line2}<br /></>}
-              {addr.city}, {addr.state} {addr.zip}<br />
-              {addr.country}<br />
-              {addr.phone}
-            </p>
+          {/* Addresses */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            {hasBilling && billing && (
+              <div className="bg-white rounded-xl border p-5">
+                <h2 className="font-semibold text-gray-800 mb-3">Billing Address</h2>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {billing.first_name} {billing.last_name}<br />
+                  {billing.company && <>{billing.company}<br /></>}
+                  {billing.address_line1}<br />
+                  {billing.address_line2 && <>{billing.address_line2}<br /></>}
+                  {billing.city}, {billing.state} {billing.zip}<br />
+                  {billing.country}<br />
+                  {billing.phone}
+                </p>
+              </div>
+            )}
+            <div className={`bg-white rounded-xl border p-5 ${hasBilling ? '' : 'sm:col-span-2'}`}>
+              <h2 className="font-semibold text-gray-800 mb-3">Shipping Address</h2>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {addr.first_name} {addr.last_name}<br />
+                {addr.company && <>{addr.company}<br /></>}
+                {addr.address_line1}<br />
+                {addr.address_line2 && <>{addr.address_line2}<br /></>}
+                {addr.city}, {addr.state} {addr.zip}<br />
+                {addr.country}<br />
+                {addr.phone}
+              </p>
+            </div>
           </div>
         </div>
 

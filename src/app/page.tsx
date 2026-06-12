@@ -24,7 +24,7 @@ const CAT_COLORS = [
 
 const trustFeatures = [
   { icon: ShieldCheck, title: 'Authentic Products', desc: 'Sourced only from trusted, original manufacturers.' },
-  { icon: Truck, title: 'Free Shipping $800+', desc: 'Complimentary shipping on all qualifying orders.' },
+  { icon: Truck, title: 'Free Shipping $800+', desc: 'First order ships free — and every order over $800 after that.' },
   { icon: HeadphonesIcon, title: 'Friendly Support', desc: 'Reach us anytime by toll-free phone and email.' },
   { icon: Award, title: 'Trusted Since 2012', desc: 'A decade serving medical professionals worldwide.' },
 ]

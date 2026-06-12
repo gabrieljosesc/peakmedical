@@ -9,7 +9,7 @@ import { productUnitPrice } from '@/lib/price-tiers'
 import { computeShipping, FREE_SHIPPING_THRESHOLD } from '@/lib/shipping'
 import { meetsCheckoutMinimumUsd } from '@/lib/cart-minimum'
 import { CartMinimumBar } from '@/components/CartMinimumBar'
-import { placeOrder } from '@/app/actions/orders'
+import { placeOrder, isFirstOrder } from '@/app/actions/orders'
 import { validateCoupon } from '@/app/actions/coupons'
 import { createClient } from '@/lib/supabase/client'
 import { AddressAutocomplete } from '@/components/AddressAutocomplete'
@@ -56,6 +56,9 @@ export default function CheckoutPage() {
   const [selectedAddrId, setSelectedAddrId] = useState<string | null>(null)
   const [shipping, setShipping] = useState<Shipping>(emptyShipping)
   const [useDifferent, setUseDifferent] = useState(false)
+  const [billingSame, setBillingSame] = useState(true)
+  const [billing, setBilling] = useState<Shipping>(emptyShipping)
+  const [firstOrder, setFirstOrder] = useState(false)
 
   const [savedCards, setSavedCards] = useState<SavedCard[]>([])
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
@@ -76,7 +79,7 @@ export default function CheckoutPage() {
   const total = selectedTotal
   const minimumMet = meetsCheckoutMinimumUsd(total)
   const discount = coupon ? Math.min(coupon.discount, total) : 0
-  const shippingAmount = computeShipping(total - discount)
+  const shippingAmount = computeShipping(total - discount, firstOrder)
   const grandTotal = Math.max(0, total - discount) + shippingAmount
 
   function applySaved(a: SavedAddress) {
@@ -94,12 +97,14 @@ export default function CheckoutPage() {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
         if (!user || !mounted) return
-        const [{ data: profile }, { data: addrs }, cardRes] = await Promise.all([
+        const [{ data: profile }, { data: addrs }, cardRes, firstOrderRes] = await Promise.all([
           supabase.from('profiles').select('full_name, email, company, phone, address_line1, city, state, postal_code, country, license_number').eq('id', user.id).single(),
           supabase.from('user_addresses').select('id,label,recipient_name,phone,line1,line2,city,state,postal_code,country,is_default').eq('user_id', user.id).order('is_default', { ascending: false }),
           supabase.from('user_saved_cards').select('id,brand,last4,exp_month,exp_year,name_on_card,is_default').eq('user_id', user.id).order('is_default', { ascending: false }),
+          isFirstOrder().catch(() => false),
         ])
         if (!mounted) return
+        setFirstOrder(firstOrderRes)
 
         setContact({
           fullName: profile?.full_name ?? '', email: profile?.email ?? user.email ?? '',
@@ -150,11 +155,17 @@ export default function CheckoutPage() {
     ['city', shipping.city], ['state', shipping.state], ['ZIP', shipping.zip], ['country', shipping.country],
   ].filter(([, v]) => !String(v).trim()).map(([l]) => l)
 
+  const missingBilling = billingSame ? [] : [
+    ['name', billing.recipientName], ['address', billing.line1],
+    ['city', billing.city], ['state', billing.state], ['ZIP', billing.zip], ['country', billing.country],
+  ].filter(([, v]) => !String(v).trim()).map(([l]) => l)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     if (!selectedCard) { setError('Add a non-expired card on file before placing this order.'); return }
     if (missingShipping.length) { setError(`Complete the shipping address: ${missingShipping.join(', ')}.`); return }
+    if (missingBilling.length) { setError(`Complete the billing address: ${missingBilling.join(', ')}.`); return }
     if (cvv.trim().length < 3) { setError('Enter the CVV from your card.'); return }
     if (!minimumMet) { setError('Minimum order not reached. Add more items before checking out.'); return }
     if (!policyAccepted) { setError('Please confirm the professional-use acknowledgement.'); return }
@@ -162,6 +173,7 @@ export default function CheckoutPage() {
     setLoading(true)
     const res = await placeOrder({
       shipping,
+      billing: billingSame ? null : billing,
       items: selectedItems.map(i => ({ slug: i.product.slug, quantity: i.quantity })),
       cardId: selectedCard.id,
       cvv: cvv.trim(),
@@ -274,6 +286,19 @@ export default function CheckoutPage() {
                   <input type="checkbox" checked={useDifferent} onChange={e => setUseDifferent(e.target.checked)} className="size-4 rounded border-gray-400 accent-[#1a3a5c]" />
                   <span>Different shipping address</span>
                 </label>
+                <label className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={billingSame}
+                    onChange={e => {
+                      setBillingSame(e.target.checked)
+                      // Seed the billing form from shipping the first time it opens
+                      if (!e.target.checked && !billing.line1.trim()) setBilling(shipping)
+                    }}
+                    className="size-4 rounded border-gray-400 accent-[#1a3a5c]"
+                  />
+                  <span>Billing address is the same as shipping</span>
+                </label>
               </div>
 
               {/* Payment card */}
@@ -348,6 +373,27 @@ export default function CheckoutPage() {
             </section>
           )}
 
+          {/* Billing address (when different from shipping) */}
+          {!billingSame && (
+            <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900">Billing address</h2>
+              <p className="mt-1 text-xs text-gray-500">The address associated with your payment card.</p>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div><label className="text-xs font-medium text-gray-600">Name</label><Input value={billing.recipientName} onChange={e => setBilling(b => ({ ...b, recipientName: e.target.value }))} className="mt-1" /></div>
+                <div><label className="text-xs font-medium text-gray-600">Phone</label><Input value={billing.phone} onChange={e => setBilling(b => ({ ...b, phone: e.target.value }))} className="mt-1" /></div>
+                <div className="sm:col-span-2">
+                  <label className="text-xs font-medium text-gray-600">Address line 1</label>
+                  <div className="mt-1"><AddressAutocomplete name="bill_line1" value={billing.line1} onChange={v => setBilling(b => ({ ...b, line1: v }))} onAddressSelect={p => setBilling(b => ({ ...b, line1: p.line1, city: p.city, state: p.state, zip: p.postalCode, ...(p.country ? { country: p.country } : {}) }))} placeholder="123 Main St" /></div>
+                </div>
+                <div className="sm:col-span-2"><label className="text-xs font-medium text-gray-600">Address line 2 (optional)</label><Input value={billing.line2} onChange={e => setBilling(b => ({ ...b, line2: e.target.value }))} className="mt-1" /></div>
+                <div><label className="text-xs font-medium text-gray-600">City</label><Input value={billing.city} onChange={e => setBilling(b => ({ ...b, city: e.target.value }))} className="mt-1" /></div>
+                <div><label className="text-xs font-medium text-gray-600">State / province</label><Input value={billing.state} onChange={e => setBilling(b => ({ ...b, state: e.target.value }))} className="mt-1" /></div>
+                <div><label className="text-xs font-medium text-gray-600">ZIP / postal code</label><Input value={billing.zip} onChange={e => setBilling(b => ({ ...b, zip: e.target.value }))} className="mt-1" /></div>
+                <div><label className="text-xs font-medium text-gray-600">Country</label><Input value={billing.country} onChange={e => setBilling(b => ({ ...b, country: e.target.value }))} className="mt-1" /></div>
+              </div>
+            </section>
+          )}
+
           {/* Order notes */}
           <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <p className="text-sm font-semibold text-gray-900">Order notes</p>
@@ -409,6 +455,7 @@ export default function CheckoutPage() {
               <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>{formatPrice(total)}</span></div>
               {discount > 0 && <div className="flex justify-between text-green-700"><span>Discount ({coupon?.code})</span><span>−{formatPrice(discount)}</span></div>}
               <div className="flex justify-between text-gray-600"><span>Shipping</span><span>{shippingAmount === 0 ? <span className="font-medium text-green-700">Free</span> : formatPrice(shippingAmount)}</span></div>
+              {firstOrder && shippingAmount === 0 && <p className="text-xs text-green-700">Complimentary shipping — your first order ships free.</p>}
               {shippingAmount > 0 && <p className="text-xs text-gray-400">Free shipping on orders over {formatPrice(FREE_SHIPPING_THRESHOLD)}</p>}
             </div>
             <Separator className="mb-3" />

@@ -108,7 +108,7 @@ export async function updateOrderAction(formData: FormData): Promise<void> {
     const svc = createAdminClient()
     const { data: order } = await svc
       .from('orders')
-      .select('id, reference_number, email, full_name, status, subtotal, coupon_code, discount_amount, shipping_amount, total, order_items(title, quantity, unit_price)')
+      .select('id, reference_number, email, full_name, phone, status, subtotal, coupon_code, discount_amount, shipping_amount, total, shipping_address, billing_address, order_items(title, quantity, unit_price)')
       .eq('id', id)
       .single()
     if (order) {

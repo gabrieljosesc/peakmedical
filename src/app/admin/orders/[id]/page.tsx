@@ -72,6 +72,8 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Pro
 
   const items = Array.isArray(order.order_items) ? order.order_items : []
   const shipping = order.shipping_address as ShippingAddress | null
+  const billing = (order.billing_address ?? null) as ShippingAddress | null
+  const hasBilling = Boolean(billing?.address_line1)
 
   return (
     <div className="max-w-3xl">
@@ -118,8 +120,14 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Pro
           </div>
         </section>
 
-        {/* Shipping */}
-        <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:col-span-2">
+        {/* Billing / Shipping */}
+        <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Billing Address</h2>
+          <address className="mt-2 not-italic text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+            {hasBilling ? formatAddress(billing) : 'Same as shipping (not recorded separately)'}
+          </address>
+        </section>
+        <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Shipping Address</h2>
           <address className="mt-2 not-italic text-sm text-gray-700 whitespace-pre-line leading-relaxed">
             {formatAddress(shipping)}

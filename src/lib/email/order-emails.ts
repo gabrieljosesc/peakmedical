@@ -8,17 +8,33 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://peakmedicalwholesa
 
 export type OrderStatus = 'pending_csr' | 'confirmed' | 'shipped' | 'cancelled'
 
+export type OrderEmailAddress = {
+  first_name?: string | null
+  last_name?: string | null
+  company?: string | null
+  address_line1?: string | null
+  address_line2?: string | null
+  city?: string | null
+  state?: string | null
+  zip?: string | null
+  country?: string | null
+  phone?: string | null
+}
+
 export type OrderEmailRow = {
   id: string
   reference_number?: string | null
   email: string
   full_name: string
+  phone?: string | null
   status: OrderStatus
   subtotal: number | string
   coupon_code?: string | null
   discount_amount?: number | string | null
   shipping_amount?: number | string | null
   total?: number | string | null
+  shipping_address?: OrderEmailAddress | null
+  billing_address?: OrderEmailAddress | null
   order_items?: { title: string; quantity: number; unit_price: number | string }[] | null
 }
 
@@ -67,6 +83,37 @@ function itemsTable(o: OrderEmailRow): string {
   return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;font-size:14px;">${rows}${summary}</table>`
 }
 
+function addressLines(a: OrderEmailAddress): string {
+  return [
+    `${a.first_name ?? ''} ${a.last_name ?? ''}`.trim(),
+    a.company,
+    a.address_line1,
+    a.address_line2,
+    [a.city, a.state, a.zip].filter(Boolean).join(', '),
+    a.country,
+    a.phone,
+  ].filter(v => v && String(v).trim()).map(v => escapeHtml(String(v))).join('<br>')
+}
+
+/** Billing + shipping addresses side by side (like the old WordPress emails). */
+function addressesBlock(o: OrderEmailRow): string {
+  const shipping = o.shipping_address && o.shipping_address.address_line1 ? o.shipping_address : null
+  const billing = (o.billing_address && o.billing_address.address_line1 ? o.billing_address : null) ?? shipping
+  if (!shipping && !billing) return ''
+
+  const cell = (title: string, a: OrderEmailAddress) =>
+    `<td valign="top" width="50%" style="padding:0 8px 0 0;">
+      <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#1a3a5c;">${title}</p>
+      <p style="margin:0;font-size:13px;color:#3f3f46;line-height:1.5;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;">${addressLines(a)}</p>
+    </td>`
+
+  const cells = [
+    billing ? cell('Billing address', billing) : '',
+    shipping ? cell('Shipping address', shipping) : '',
+  ].join('')
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 4px;"><tr>${cells}</tr></table>`
+}
+
 // ── Customer: order received ────────────────────────────────────────────────
 export async function sendOrderReceivedEmail(o: OrderEmailRow): Promise<void> {
   const name = escapeHtml(o.full_name.trim() || 'there')
@@ -74,6 +121,7 @@ export async function sendOrderReceivedEmail(o: OrderEmailRow): Promise<void> {
     <p style="margin:0 0 12px;">Thank you for your order! We&rsquo;ve received it and our team will contact you shortly to confirm payment and shipping. <strong>No payment was captured on the website.</strong></p>
     <p style="margin:0 0 4px;"><strong>Reference:</strong> ${escapeHtml(ref(o))}</p>
     ${itemsTable(o)}
+    ${addressesBlock(o)}
     <p style="margin:12px 0 0;">You can view this order anytime in your account.</p>`
   await sendTransactionalEmail({
     to: o.email,
@@ -87,8 +135,9 @@ export async function sendOrderReceivedEmail(o: OrderEmailRow): Promise<void> {
 export async function sendAdminNewOrderEmail(o: OrderEmailRow): Promise<void> {
   const body = `<p style="margin:0 0 12px;"><strong>New order received.</strong></p>
     <p style="margin:0 0 4px;"><strong>Reference:</strong> ${escapeHtml(ref(o))}</p>
-    <p style="margin:0 0 4px;"><strong>Customer:</strong> ${escapeHtml(o.full_name)} (${escapeHtml(o.email)})</p>
+    <p style="margin:0 0 4px;"><strong>Customer:</strong> ${escapeHtml(o.full_name)} (${escapeHtml(o.email)})${o.phone ? ` · ${escapeHtml(o.phone)}` : ''}</p>
     ${itemsTable(o)}
+    ${addressesBlock(o)}
     <p style="margin:12px 0 0;"><a href="${SITE_URL}/admin/orders/${o.id}" style="color:#1a3a5c;">Open in admin →</a></p>`
   // ADMIN_NOTIFY_EMAILS: comma-separated extra inboxes (e.g. a Gmail copy)
   const extraEmails = (process.env.ADMIN_NOTIFY_EMAILS ?? '')
@@ -118,7 +167,8 @@ export async function sendOrderStatusEmail(o: OrderEmailRow, status: OrderStatus
   const body = `<p style="margin:0 0 12px;">Hi ${name},</p>
     <p style="margin:0 0 12px;">${copy.line}</p>
     <p style="margin:0 0 4px;"><strong>Reference:</strong> ${escapeHtml(ref(o))}</p>
-    ${itemsTable(o)}`
+    ${itemsTable(o)}
+    ${addressesBlock(o)}`
   await sendTransactionalEmail({
     to: o.email,
     subject: `${copy.subject} — ${ref(o)}`,

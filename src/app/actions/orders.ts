@@ -8,11 +8,15 @@ import { meetsCheckoutMinimumUsd, MIN_CHECKOUT_SUBTOTAL_USD } from '@/lib/cart-m
 import { unitPriceForQuantity, parsePriceTiers } from '@/lib/price-tiers'
 import { encryptCardCvv } from '@/lib/payment-card-crypto'
 
+export type OrderAddressInput = {
+  recipientName: string; company: string; phone: string
+  line1: string; line2: string; city: string; state: string; zip: string; country: string
+}
+
 export type PlaceOrderInput = {
-  shipping: {
-    recipientName: string; company: string; phone: string
-    line1: string; line2: string; city: string; state: string; zip: string; country: string
-  }
+  shipping: OrderAddressInput
+  /** Billing address; omit/null when it is the same as shipping. */
+  billing?: OrderAddressInput | null
   items: { slug: string; quantity: number }[]
   cardId: string
   cvv: string
@@ -36,6 +40,32 @@ const ORDER_NUMBER_FLOOR = 109510
  * "WP-109506") and returns max + 1. A concurrent order can race to the same
  * number; the insert retries on the unique violation.
  */
+/** jsonb shape stored in orders.shipping_address / orders.billing_address. */
+function toAddressJson(a: OrderAddressInput) {
+  return {
+    first_name: a.recipientName, last_name: '', company: a.company,
+    address_line1: a.line1, address_line2: a.line2,
+    city: a.city, state: a.state, zip: a.zip, country: a.country, phone: a.phone,
+  }
+}
+
+/**
+ * First order in the system for this user ships free. Only non-cancelled
+ * orders count, so a cancelled attempt does not consume the promo.
+ */
+export async function isFirstOrder(): Promise<boolean> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+  const svc = createAdminClient()
+  const { count } = await svc
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .in('status', ['pending_csr', 'confirmed', 'shipped'])
+  return (count ?? 0) === 0
+}
+
 async function nextOrderNumber(svc: ReturnType<typeof createAdminClient>): Promise<number> {
   const { data } = await svc
     .from('orders')
@@ -104,7 +134,15 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     if (res.ok) { couponCode = res.code; discount = Math.min(res.discount, subtotal) }
   }
 
-  const shippingAmount = computeShipping(subtotal - discount)
+  // First order ships free; later orders pay flat rate below the threshold
+  const { count: priorOrders } = await svc
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .in('status', ['pending_csr', 'confirmed', 'shipped'])
+  const firstOrder = (priorOrders ?? 0) === 0
+
+  const shippingAmount = computeShipping(subtotal - discount, firstOrder)
   const total = Math.max(0, subtotal - discount) + shippingAmount
 
   // Card snapshot + encrypted CVV
@@ -127,6 +165,12 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   }
 
   const s = input.shipping
+  // Billing defaults to the shipping address so every order records both
+  const billing = input.billing ?? s
+  if (!billing.recipientName.trim() || !billing.line1.trim()) {
+    return { ok: false, message: 'Complete the billing address (name and street address are required).' }
+  }
+
   let referenceNumber = await nextOrderNumber(svc)
   let order: { id: string } | null = null
 
@@ -145,11 +189,8 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
         email: profile?.email ?? user.email ?? '',
         full_name: profile?.full_name ?? s.recipientName,
         phone: s.phone || null,
-        shipping_address: {
-          first_name: s.recipientName, last_name: '', company: s.company,
-          address_line1: s.line1, address_line2: s.line2,
-          city: s.city, state: s.state, zip: s.zip, country: s.country, phone: s.phone,
-        },
+        shipping_address: toAddressJson(s),
+        billing_address: toAddressJson(billing),
         customer_notes: input.customerNotes || null,
         payment_notes: input.paymentNotes || null,
         policy_acknowledged_at: input.policyAccepted ? new Date().toISOString() : null,
@@ -191,7 +232,7 @@ export async function notifyNewOrder(orderId: string): Promise<void> {
     const svc = createAdminClient()
     const { data: order } = await svc
       .from('orders')
-      .select('id, reference_number, email, full_name, status, subtotal, coupon_code, discount_amount, shipping_amount, total, order_items(title, quantity, unit_price)')
+      .select('id, reference_number, email, full_name, phone, status, subtotal, coupon_code, discount_amount, shipping_amount, total, shipping_address, billing_address, order_items(title, quantity, unit_price)')
       .eq('id', orderId)
       .single()
     if (!order) return
