@@ -1,4 +1,4 @@
-export const FREE_SHIPPING_THRESHOLD = 250
+export const FREE_SHIPPING_THRESHOLD = 800
 export const FLAT_SHIPPING_RATE = 25
 
 /** Flat-rate shipping, free at or above the threshold (after discounts). */

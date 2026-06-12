@@ -40,7 +40,7 @@ export default function AboutPage() {
           <div className="grid md:grid-cols-2 gap-4">
             {[
               { icon: ShieldCheck, title: 'Authentic Products', desc: 'Every product we sell is guaranteed legit and authentic, sourced directly from trusted manufacturers.' },
-              { icon: Truck, title: 'Free Shipping', desc: 'Enjoy complimentary shipping on all orders over $250, delivered to your practice.' },
+              { icon: Truck, title: 'Free Shipping', desc: 'Enjoy complimentary shipping on all orders over $800, delivered to your practice.' },
               { icon: HeadphonesIcon, title: '24/7 Support', desc: 'Our customer service team is online around the clock to assist with any questions.' },
               { icon: Globe, title: 'Global Reach', desc: 'We ship internationally, serving medical professionals in clinics and hospitals worldwide.' },
               { icon: Award, title: 'Since 2012', desc: 'Over a decade of trusted service — our track record speaks for itself.' },

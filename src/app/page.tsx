@@ -24,7 +24,7 @@ const CAT_COLORS = [
 
 const trustFeatures = [
   { icon: ShieldCheck, title: 'Authentic Products', desc: 'Sourced only from trusted, original manufacturers.' },
-  { icon: Truck, title: 'Free Shipping $250+', desc: 'Complimentary shipping on all qualifying orders.' },
+  { icon: Truck, title: 'Free Shipping $800+', desc: 'Complimentary shipping on all qualifying orders.' },
   { icon: HeadphonesIcon, title: 'Friendly Support', desc: 'Reach us anytime by toll-free phone and email.' },
   { icon: Award, title: 'Trusted Since 2012', desc: 'A decade serving medical professionals worldwide.' },
 ]
@@ -39,7 +39,7 @@ export default async function HomePage() {
   const supabase = createAdminClient()
 
   const [{ data: categories }, { data: featured }, { data: posts }] = await Promise.all([
-    supabase.from('categories').select('id, slug, name').is('parent_id', null).order('sort_order').limit(12),
+    supabase.from('categories').select('id, slug, name').is('parent_id', null).order('sort_order').limit(18),
     supabase.from('products')
       .select('*, category:categories(*), images:product_images(id,url,sort_order)')
       .eq('is_featured', true).eq('is_active', true).limit(10),

@@ -12,12 +12,6 @@ export function formatPrice(price: number): string {
   }).format(price)
 }
 
-export function generateReferenceNumber(): string {
-  const timestamp = Date.now().toString(36).toUpperCase()
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
-  return `PMW-${timestamp}-${random}`
-}
-
 export function slugify(text: string): string {
   return text
     .toLowerCase()

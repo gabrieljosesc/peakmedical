@@ -7,6 +7,7 @@ import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/utils'
 import { productUnitPrice } from '@/lib/price-tiers'
 import { meetsCheckoutMinimumUsd } from '@/lib/cart-minimum'
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/shipping'
 import { CartMinimumBar } from '@/components/CartMinimumBar'
 import { buttonVariants } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -34,7 +35,7 @@ export default function CartPage() {
   const allSelected = selectedItems.length === items.length
   const minimumMet = meetsCheckoutMinimumUsd(selectedTotal)
   const canCheckout = selectedItems.length > 0 && minimumMet
-  const freeShipping = selectedTotal >= 250
+  const freeShipping = selectedTotal >= FREE_SHIPPING_THRESHOLD
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -148,7 +149,7 @@ export default function CartPage() {
             </div>
             {!freeShipping && selectedTotal > 0 && (
               <p className="text-xs text-blue-600 bg-blue-50 rounded p-2 mb-4">
-                Add {formatPrice(250 - selectedTotal)} more for free shipping!
+                Add {formatPrice(FREE_SHIPPING_THRESHOLD - selectedTotal)} more for free shipping!
               </p>
             )}
             <Separator className="mb-4" />

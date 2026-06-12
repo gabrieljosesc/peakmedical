@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: 'FAQ' }
 const faqs = [
   { q: 'Who can order from Peak Medical Wholesale?', a: 'We supply licensed medical professionals, clinics, spas, and hospitals only. A valid professional license is required during registration.' },
   { q: 'How does payment work?', a: 'After you place an order online, our team contacts you within 24 business hours to confirm payment and shipping. No payment is captured on the website.' },
-  { q: 'Do you offer free shipping?', a: 'Yes — shipping is complimentary on all orders over $250.' },
+  { q: 'Do you offer free shipping?', a: 'Yes — shipping is complimentary on all orders over $800.' },
   { q: 'Are your products authentic?', a: 'All products are sourced directly from trusted, original manufacturers and are guaranteed authentic.' },
   { q: 'How are temperature-sensitive products shipped?', a: 'Cold-chain items are shipped in validated insulated packaging to maintain the manufacturer-required temperature range.' },
   { q: 'Can I see my order history?', a: 'Yes. Once signed in, visit your account to view all past orders and their status.' },

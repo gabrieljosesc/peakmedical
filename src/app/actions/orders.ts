@@ -7,7 +7,6 @@ import { computeShipping } from '@/lib/shipping'
 import { meetsCheckoutMinimumUsd, MIN_CHECKOUT_SUBTOTAL_USD } from '@/lib/cart-minimum'
 import { unitPriceForQuantity, parsePriceTiers } from '@/lib/price-tiers'
 import { encryptCardCvv } from '@/lib/payment-card-crypto'
-import { generateReferenceNumber } from '@/lib/utils'
 
 export type PlaceOrderInput = {
   shipping: {
@@ -27,6 +26,28 @@ export type PlaceOrderResult = { ok: true; reference: string } | { ok: false; me
 
 function cardExpired(m: number, y: number) {
   return new Date(y, m, 0, 23, 59, 59, 999) < new Date()
+}
+
+/** Last order number on the old WordPress store — new orders continue from here. */
+const ORDER_NUMBER_FLOOR = 109510
+
+/**
+ * Next sequential order number. Reads recent references ("109511" or imported
+ * "WP-109506") and returns max + 1. A concurrent order can race to the same
+ * number; the insert retries on the unique violation.
+ */
+async function nextOrderNumber(svc: ReturnType<typeof createAdminClient>): Promise<number> {
+  const { data } = await svc
+    .from('orders')
+    .select('reference_number')
+    .order('created_at', { ascending: false })
+    .limit(500)
+  let max = ORDER_NUMBER_FLOOR
+  for (const row of data ?? []) {
+    const m = /(\d{6,})$/.exec(String(row.reference_number ?? ''))
+    if (m) max = Math.max(max, Number(m[1]))
+  }
+  return max + 1
 }
 
 /**
@@ -106,40 +127,49 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   }
 
   const s = input.shipping
-  const reference = generateReferenceNumber()
+  let referenceNumber = await nextOrderNumber(svc)
+  let order: { id: string } | null = null
 
-  const { data: order, error } = await svc
-    .from('orders')
-    .insert({
-      user_id: user.id,
-      reference_number: reference,
-      status: 'pending_csr',
-      subtotal,
-      coupon_code: couponCode,
-      discount_amount: discount,
-      shipping_amount: shippingAmount,
-      total,
-      email: profile?.email ?? user.email ?? '',
-      full_name: profile?.full_name ?? s.recipientName,
-      phone: s.phone || null,
-      shipping_address: {
-        first_name: s.recipientName, last_name: '', company: s.company,
-        address_line1: s.line1, address_line2: s.line2,
-        city: s.city, state: s.state, zip: s.zip, country: s.country, phone: s.phone,
-      },
-      customer_notes: input.customerNotes || null,
-      payment_notes: input.paymentNotes || null,
-      policy_acknowledged_at: input.policyAccepted ? new Date().toISOString() : null,
-      payment_card_snapshot: {
-        brand: card.brand, last4: card.last4,
-        exp_month: card.exp_month, exp_year: card.exp_year,
-        name_on_card: card.name_on_card, cvv_encrypted: cvvEncrypted,
-      },
-    })
-    .select('id')
-    .single()
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data, error } = await svc
+      .from('orders')
+      .insert({
+        user_id: user.id,
+        reference_number: String(referenceNumber),
+        status: 'pending_csr',
+        subtotal,
+        coupon_code: couponCode,
+        discount_amount: discount,
+        shipping_amount: shippingAmount,
+        total,
+        email: profile?.email ?? user.email ?? '',
+        full_name: profile?.full_name ?? s.recipientName,
+        phone: s.phone || null,
+        shipping_address: {
+          first_name: s.recipientName, last_name: '', company: s.company,
+          address_line1: s.line1, address_line2: s.line2,
+          city: s.city, state: s.state, zip: s.zip, country: s.country, phone: s.phone,
+        },
+        customer_notes: input.customerNotes || null,
+        payment_notes: input.paymentNotes || null,
+        policy_acknowledged_at: input.policyAccepted ? new Date().toISOString() : null,
+        payment_card_snapshot: {
+          brand: card.brand, last4: card.last4,
+          exp_month: card.exp_month, exp_year: card.exp_year,
+          name_on_card: card.name_on_card, cvv_encrypted: cvvEncrypted,
+        },
+      })
+      .select('id')
+      .single()
 
-  if (error || !order) return { ok: false, message: error?.message ?? 'Could not place order.' }
+    if (data) { order = data; break }
+    // 23505 = unique violation: another order claimed this number concurrently
+    if (error?.code === '23505') { referenceNumber++; continue }
+    return { ok: false, message: error?.message ?? 'Could not place order.' }
+  }
+
+  if (!order) return { ok: false, message: 'Could not place order. Please try again.' }
+  const reference = String(referenceNumber)
 
   await svc.from('order_items').insert(orderItems.map(it => ({ ...it, order_id: order.id })))
 

@@ -19,7 +19,7 @@ export default function ShippingColdChainPage() {
       <section className="space-y-2 text-sm text-gray-700 leading-relaxed">
         <h2 className="text-lg font-semibold text-gray-900">Shipping rates</h2>
         <p>
-          Shipping is <strong>free on orders over $250</strong>. Orders below this threshold ship at a
+          Shipping is <strong>free on orders over $800</strong>. Orders below this threshold ship at a
           flat rate shown at checkout. Expedited and special-handling options may be arranged with your
           account manager.
         </p>
