@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { sendTransactionalEmail } from '@/lib/email/send'
+import { sendTransactionalEmail, type SendEmailResult } from '@/lib/email/send'
 
 const SITE_EMAIL = process.env.NOTIFICATION_EMAIL?.trim() || 'info@peakmedicalwholesale.com'
 const SITE_PHONE = '+1-888-222-0373'
@@ -115,7 +115,7 @@ function addressesBlock(o: OrderEmailRow): string {
 }
 
 // ── Customer: order received ────────────────────────────────────────────────
-export async function sendOrderReceivedEmail(o: OrderEmailRow): Promise<void> {
+export async function sendOrderReceivedEmail(o: OrderEmailRow): Promise<SendEmailResult> {
   const name = escapeHtml(o.full_name.trim() || 'there')
   const body = `<p style="margin:0 0 12px;">Hi ${name},</p>
     <p style="margin:0 0 12px;">Thank you for your order! We&rsquo;ve received it and our team will contact you shortly to confirm payment and shipping. <strong>No payment was captured on the website.</strong></p>
@@ -123,7 +123,7 @@ export async function sendOrderReceivedEmail(o: OrderEmailRow): Promise<void> {
     ${itemsTable(o)}
     ${addressesBlock(o)}
     <p style="margin:12px 0 0;">You can view this order anytime in your account.</p>`
-  await sendTransactionalEmail({
+  return sendTransactionalEmail({
     to: o.email,
     subject: `Order received — ${ref(o)}`,
     html: layout(body),
@@ -132,7 +132,7 @@ export async function sendOrderReceivedEmail(o: OrderEmailRow): Promise<void> {
 }
 
 // ── Admin: new order alert ──────────────────────────────────────────────────
-export async function sendAdminNewOrderEmail(o: OrderEmailRow): Promise<void> {
+export async function sendAdminNewOrderEmail(o: OrderEmailRow): Promise<SendEmailResult> {
   const body = `<p style="margin:0 0 12px;"><strong>New order received.</strong></p>
     <p style="margin:0 0 4px;"><strong>Reference:</strong> ${escapeHtml(ref(o))}</p>
     <p style="margin:0 0 4px;"><strong>Customer:</strong> ${escapeHtml(o.full_name)} (${escapeHtml(o.email)})${o.phone ? ` · ${escapeHtml(o.phone)}` : ''}</p>
@@ -144,7 +144,7 @@ export async function sendAdminNewOrderEmail(o: OrderEmailRow): Promise<void> {
     .split(',')
     .map(s => s.trim())
     .filter(Boolean)
-  await sendTransactionalEmail({
+  return sendTransactionalEmail({
     to: [SITE_EMAIL, ...extraEmails],
     subject: `New order ${ref(o)} — ${money(o.subtotal)}`,
     html: layout(body),

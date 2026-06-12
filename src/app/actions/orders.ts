@@ -238,10 +238,15 @@ export async function notifyNewOrder(orderId: string): Promise<void> {
     if (!order) return
 
     const row = order as unknown as OrderEmailRow
-    await Promise.allSettled([
+    const results = await Promise.allSettled([
       sendOrderReceivedEmail(row),
       sendAdminNewOrderEmail(row),
     ])
+    results.forEach((r, i) => {
+      const which = i === 0 ? 'customer' : 'admin'
+      if (r.status === 'rejected') console.error(`[notifyNewOrder] ${which} email failed:`, r.reason)
+      else if (!r.value.ok) console.error(`[notifyNewOrder] ${which} email not sent:`, r.value.error)
+    })
   } catch (e) {
     console.error('[notifyNewOrder]', e)
   }

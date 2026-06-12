@@ -30,9 +30,25 @@ of these for **Production, Preview, and Development**:
 | `NEXT_PUBLIC_SITE_URL` | `https://peakmedicalwholesale.com` |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | *(optional — for address autocomplete)* |
 
+**Email (required — without these, order emails are silently skipped):**
+
+| Name | Value |
+|------|-------|
+| `SMTP_HOST` | `mail.peakmedicalwholesale.com` |
+| `SMTP_PORT` | `465` |
+| `SMTP_USER` | `info@peakmedicalwholesale.com` |
+| `SMTP_PASS` | *(from your local `.env.local`)* |
+| `NOTIFICATION_EMAIL` | `info@peakmedicalwholesale.com` |
+| `ADMIN_NOTIFY_EMAILS` | *(optional — extra comma-separated admin inboxes)* |
+| `RESEND_API_KEY` | *(optional fallback if SMTP is not set)* |
+
 > Copy the exact values from `C:\Users\63950\Desktop\gabby\peakmedical\.env.local`.
 > `PAYMENT_CARD_SECRET` **must match** the local value, or saved cards can't be
 > decrypted.
+>
+> After deploying, sign in as admin and open
+> `https://peakmedicalwholesale.com/api/email-health` — it shows whether the
+> deployment can actually send email (`canSendEmail: true`).
 
 Then click **Deploy**. Vercel builds and gives you a URL like
 `peakmedical.vercel.app`.
