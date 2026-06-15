@@ -118,7 +118,7 @@ function addressesBlock(o: OrderEmailRow): string {
 export async function sendOrderReceivedEmail(o: OrderEmailRow): Promise<SendEmailResult> {
   const name = escapeHtml(o.full_name.trim() || 'there')
   const body = `<p style="margin:0 0 12px;">Hi ${name},</p>
-    <p style="margin:0 0 12px;">Thank you for your order! We&rsquo;ve received it and our team will contact you shortly to confirm payment and shipping. <strong>No payment was captured on the website.</strong></p>
+    <p style="margin:0 0 12px;">Thank you for your order! Your order has been received and is being processed. <strong>No payment was captured on the website.</strong></p>
     <p style="margin:0 0 4px;"><strong>Reference:</strong> ${escapeHtml(ref(o))}</p>
     ${itemsTable(o)}
     ${addressesBlock(o)}
@@ -127,7 +127,7 @@ export async function sendOrderReceivedEmail(o: OrderEmailRow): Promise<SendEmai
     to: o.email,
     subject: `Order received — ${ref(o)}`,
     html: layout(body),
-    text: `Hi ${o.full_name}, we received your order ${ref(o)}. Our team will contact you to confirm payment and shipping. No payment was captured. Total: ${money(o.subtotal)}.`,
+    text: `Hi ${o.full_name}, your order ${ref(o)} has been received and is being processed. No payment was captured. Total: ${money(o.subtotal)}.`,
   })
 }
 

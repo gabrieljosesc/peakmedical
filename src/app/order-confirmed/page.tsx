@@ -17,7 +17,7 @@ export default async function OrderConfirmedPage({
       </div>
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Received!</h1>
       <p className="text-gray-600 mb-6 leading-relaxed">
-        Thank you! Our team will contact you shortly to confirm payment and shipping.
+        Thank you! Your order has been received and is being processed.
         No payment was captured on this website.
       </p>
       {ref && (
@@ -27,7 +27,7 @@ export default async function OrderConfirmedPage({
         </div>
       )}
       <div className="text-sm text-gray-500 mb-8 bg-blue-50 rounded-lg p-4">
-        <p>We&apos;ll reach out via <strong>+1-888-222-0373</strong> or email within <strong>24 business hours</strong>.</p>
+        <p>A confirmation email has been sent to you. You can view this order anytime under <strong>My Orders</strong>.</p>
       </div>
       <div className="flex flex-wrap gap-3 justify-center">
         <Link href="/shop" className={cn(buttonVariants(), 'bg-[#1a3a5c] hover:bg-[#152f4a]')}>

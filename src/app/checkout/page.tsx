@@ -334,7 +334,6 @@ export default function CheckoutPage() {
                       placeholder="3–4 digits" autoComplete="cc-csc"
                       className="mt-1 w-24 rounded-md border border-gray-300 px-3 py-2 text-sm"
                     />
-                    <p className="mt-1 text-xs text-gray-400">Required for processing. Encrypted and visible only to our team for this order.</p>
                   </div>
                 )}
               </div>
