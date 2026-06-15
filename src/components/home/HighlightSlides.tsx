@@ -28,7 +28,7 @@ const HIGHLIGHTS: Highlight[] = [
   {
     tag: 'Member Perk',
     title: 'Your First Order Ships Free',
-    body: 'Free shipping on your first order — then free over $800, $50 over $500, $100 under. Always shown at checkout.',
+    body: 'Free shipping on your first order — then free over $795, $50 over $498, $100 under. Always shown at checkout.',
     cta: { label: 'Start Shopping', href: '/shop' },
     icon: Truck,
     theme: 'from-[#2d5f5f] to-[#3d7a7a]',

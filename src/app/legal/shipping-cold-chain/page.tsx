@@ -20,9 +20,9 @@ export default function ShippingColdChainPage() {
         <h2 className="text-lg font-semibold text-gray-900">Shipping rates</h2>
         <p>
           Your <strong>first order ships free</strong>. After that, shipping is{' '}
-          <strong>free on orders of $800 or more</strong>, <strong>$50</strong> on orders of $500–$800,
-          and <strong>$100</strong> on orders under $500 — always shown at checkout before you place the
-          order. Expedited and special-handling options may be arranged with your account manager.
+          <strong>free on orders of $795 or more</strong>, <strong>$50</strong> on orders of $498–$795,
+          and <strong>$100</strong> on orders under $498 — always shown at checkout before you place the
+          order.
         </p>
       </section>
 

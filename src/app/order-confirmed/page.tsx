@@ -18,7 +18,6 @@ export default async function OrderConfirmedPage({
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Received!</h1>
       <p className="text-gray-600 mb-6 leading-relaxed">
         Thank you! Your order has been received and is being processed.
-        No payment was captured on this website.
       </p>
       {ref && (
         <div className="inline-block bg-gray-100 rounded-lg px-6 py-3 mb-8">

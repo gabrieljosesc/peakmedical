@@ -1,5 +1,5 @@
-export const FREE_SHIPPING_THRESHOLD = 800
-export const MID_SHIPPING_THRESHOLD = 500
+export const FREE_SHIPPING_THRESHOLD = 795
+export const MID_SHIPPING_THRESHOLD = 498
 export const MID_SHIPPING_RATE = 50
 export const BASE_SHIPPING_RATE = 100
 
@@ -10,9 +10,9 @@ export const SHIPPING_RATES_TEXT =
 /**
  * Shipping rules:
  * - the customer's first order ships free,
- * - $800+ (after discounts) ships free,
- * - $500–$799.99 ships at $50,
- * - under $500 ships at $100.
+ * - $795+ (after discounts) ships free,
+ * - $498–$794.99 ships at $50,
+ * - under $498 ships at $100.
  */
 export function computeShipping(subtotalAfterDiscount: number, isFirstOrder = false): number {
   if (subtotalAfterDiscount <= 0) return 0
