@@ -21,8 +21,6 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://peakmedicalwholesale.com";
-
 // Parse CLI args
 const args = Object.fromEntries(
   process.argv.slice(2)
@@ -36,6 +34,16 @@ const LIMIT  = parseInt(args.limit  ?? "9999");
 const OFFSET = parseInt(args.offset ?? "0");
 // --only=email@x.com  → send to just that one address (safe pre-launch test)
 const ONLY   = (typeof args.only === "string" ? args.only : "").toLowerCase().trim();
+// --delay=ms between sends (default 800ms ≈ 75/min; raise to respect a lower cap)
+const DELAY  = parseInt(args.delay ?? "800");
+
+// Reset links must point at the live site. The dev .env.local uses localhost,
+// so ignore that here: prefer --site, else a non-localhost env value, else prod.
+const envSite = process.env.NEXT_PUBLIC_SITE_URL;
+const SITE_URL =
+  (typeof args.site === "string" && args.site) ||
+  (envSite && !envSite.includes("localhost") ? envSite : null) ||
+  "https://peakmedicalwholesale.com";
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -62,7 +70,16 @@ async function main() {
     process.exit(1);
   }
 
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!anonKey) {
+    console.error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local");
+    process.exit(1);
+  }
+
+  // Service client lists users (admin); anon client triggers the actual
+  // recovery email via Supabase's SMTP + "Reset Password" template.
   const supabase = createClient(url, key, { auth: { persistSession: false } });
+  const anon = createClient(url, anonKey, { auth: { persistSession: false } });
 
   console.log("Fetching all Supabase auth users...");
   const allUsers = await fetchAllAuthUsers(supabase);
@@ -81,20 +98,25 @@ async function main() {
     process.exit(1);
   }
 
+  const redirectTo = `${SITE_URL}/auth/callback?next=/auth/update-password`;
   console.log(`Total users: ${allUsers.length}`);
   console.log(`Targets for reset (offset=${OFFSET}, limit=${LIMIT}): ${targets.length}`);
-  console.log(`Reset link redirect: ${SITE_URL}/auth/callback?next=/auth/update-password\n`);
+  console.log(`Reset link redirect: ${redirectTo}`);
+  console.log(`Delay between sends: ${DELAY}ms\n`);
 
-  let sent = 0, failed = 0;
+  let sent = 0, failed = 0, rateLimited = 0;
 
   for (const user of targets) {
-    const { error } = await supabase.auth.admin.generateLink({
-      type: "recovery",
-      email: user.email,
-      options: {
-        redirectTo: `${SITE_URL}/auth/callback?next=/auth/update-password`,
-      },
-    });
+    // resetPasswordForEmail actually sends (generateLink only *makes* a link).
+    let { error } = await anon.auth.resetPasswordForEmail(user.email, { redirectTo });
+
+    // Back off once on a rate-limit (429) and retry the same user.
+    if (error && (error.status === 429 || /rate limit/i.test(error.message))) {
+      rateLimited++;
+      console.warn(`  RATE-LIMITED on ${user.email} — backing off 60s…`);
+      await sleep(60000);
+      ({ error } = await anon.auth.resetPasswordForEmail(user.email, { redirectTo }));
+    }
 
     if (error) {
       console.error(`  FAIL: ${user.email} — ${error.message}`);
@@ -104,10 +126,10 @@ async function main() {
       sent++;
     }
 
-    // Supabase rate-limits email sends — stay well under 10/sec
-    await sleep(200);
+    await sleep(DELAY);
   }
 
+  console.log(`  (rate-limit backoffs: ${rateLimited})`);
   console.log(`
 Reset emails: sent=${sent}, failed=${failed}
 Done! Users can now click the email link to set their password
