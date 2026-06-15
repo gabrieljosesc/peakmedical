@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/hooks/useCart'
@@ -6,6 +7,7 @@ import { WishlistProvider } from '@/hooks/useWishlist'
 import { Toaster } from '@/components/ui/sonner'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import NavigationProgress from '@/components/layout/NavigationProgress'
 import { FloatingCart } from '@/components/FloatingCart'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/auth'
@@ -38,11 +40,27 @@ export default async function RootLayout({
   const user = await getAuthUser()
 
   const admin = createAdminClient()
-  const { data: categories } = await admin
-    .from('categories')
-    .select('id, slug, name, parent_id')
-    .is('parent_id', null)
-    .order('sort_order')
+  const [{ data: categories }, { data: navSamples }] = await Promise.all([
+    admin
+      .from('categories')
+      .select('id, slug, name, parent_id')
+      .is('parent_id', null)
+      .order('sort_order'),
+    admin
+      .from('products')
+      .select('slug, title, base_price, images:product_images(url, sort_order)')
+      .eq('is_featured', true)
+      .eq('is_active', true)
+      .limit(3),
+  ])
+
+  // Flatten the hero image for each nav sample product
+  const samples = (navSamples ?? []).map(p => ({
+    slug: p.slug,
+    title: p.title,
+    base_price: Number(p.base_price),
+    image: (p.images ?? []).sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)[0]?.url ?? null,
+  }))
 
   // Fetch role + name for the navbar
   let isAdmin = false
@@ -64,7 +82,10 @@ export default async function RootLayout({
       <body className={`${inter.className} min-h-full flex flex-col bg-gray-50`}>
         <CartProvider>
           <WishlistProvider>
-            <Navbar user={user} categories={categories ?? []} isAdmin={isAdmin} displayName={displayName} />
+            <Suspense fallback={null}>
+              <NavigationProgress />
+            </Suspense>
+            <Navbar user={user} categories={categories ?? []} navSamples={samples} isAdmin={isAdmin} displayName={displayName} />
             <main className="flex-1">
               {children}
             </main>

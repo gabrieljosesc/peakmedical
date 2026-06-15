@@ -73,7 +73,7 @@ export default function SearchBar() {
     setOpen(false)
     setQuery('')
     setSuggestions([])
-    router.push(`/shop?search=${encodeURIComponent(q)}`)
+    router.push(`/search?q=${encodeURIComponent(q)}`)
   }
 
   function goToProduct(slug: string) {

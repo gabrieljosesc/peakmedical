@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
 import { Product } from '@/types'
 import { getProductCoas } from '@/lib/coa'
+import { getDoseSiblings } from '@/lib/peptide-doses'
 import ProductDetail from '@/components/products/ProductDetail'
 import ProductCard from '@/components/products/ProductCard'
 import { ProductReviews } from '@/components/products/ProductReviews'
@@ -40,6 +41,11 @@ export default async function ProductPage({ params }: Props) {
 
   if (!product) notFound()
 
+  // Peptides encode dose in the title; offer other strengths of the same peptide
+  const doseOptions = product.category?.slug === 'peptides'
+    ? await getDoseSiblings(supabase, product)
+    : []
+
   const { data: related } = await supabase
     .from('products')
     .select('*, category:categories(*), images:product_images(id,url,sort_order)')
@@ -55,6 +61,7 @@ export default async function ProductPage({ params }: Props) {
           ...(product as Product),
           coas: getProductCoas(slug, product.coa_url),
         }}
+        doseOptions={doseOptions}
       />
 
       <ProductReviews productId={product.id} slug={slug} />

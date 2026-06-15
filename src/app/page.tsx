@@ -6,9 +6,13 @@ import ProductCard from '@/components/products/ProductCard'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { blogImage } from '@/lib/blog-images'
+import { getHomeBrands } from '@/lib/home-brands'
+import HeroSlideshow from '@/components/home/HeroSlideshow'
+import BrandMarquee from '@/components/home/BrandMarquee'
+import HighlightSlides from '@/components/home/HighlightSlides'
 import {
   ShieldCheck, Truck, HeadphonesIcon, Award, Gift, Wallet,
-  Star, ArrowRight, CheckCircle2,
+  Star,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -38,7 +42,7 @@ const reviews = [
 export default async function HomePage() {
   const supabase = createAdminClient()
 
-  const [{ data: categories }, { data: featured }, { data: posts }] = await Promise.all([
+  const [{ data: categories }, { data: featured }, { data: posts }, brands] = await Promise.all([
     supabase.from('categories').select('id, slug, name').is('parent_id', null).order('sort_order').limit(18),
     supabase.from('products')
       .select('*, category:categories(*), images:product_images(id,url,sort_order)')
@@ -46,45 +50,13 @@ export default async function HomePage() {
     supabase.from('blog_posts')
       .select('slug, title, excerpt, published_at')
       .eq('is_published', true).order('published_at', { ascending: false }).limit(3),
+    getHomeBrands(supabase),
   ])
 
   return (
     <div>
-      {/* ── HERO (background image) ──────────────────────────────────── */}
-      <section
-        className="relative overflow-hidden bg-[#1a3a5c] bg-cover bg-center"
-        style={{ backgroundImage: 'url(/hero-bg.svg)' }}
-      >
-        {/* left-to-right dark overlay for text legibility */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0f2438]/90 via-[#13314d]/70 to-transparent" />
-        <div className="relative max-w-7xl mx-auto px-4 py-20 lg:py-28">
-          <div className="max-w-2xl text-white">
-            <p className="inline-flex items-center gap-2 text-blue-200 text-xs font-semibold tracking-widest uppercase mb-4 bg-white/10 rounded-full px-3 py-1">
-              <Award className="w-3.5 h-3.5" /> Trusted by Medical Professionals Since 2012
-            </p>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.05] mb-5">
-              Premium Medical Supplies at Wholesale Prices
-            </h1>
-            <p className="text-white/85 text-lg mb-8 max-w-xl">
-              We specialize in the wholesale of botulinum toxins, dermal fillers, orthopedic
-              injectables, rheumatology, and research peptides — delivered straight to your clinic.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/shop" className={cn(buttonVariants({ size: 'lg' }), 'bg-white text-[#1a3a5c] hover:bg-gray-100 font-semibold gap-2')}>
-                Shop All Products <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link href="/auth/register" className={cn(buttonVariants({ size: 'lg' }), 'bg-transparent border border-white text-white hover:bg-white hover:text-[#1a3a5c] font-semibold')}>
-                Create Account
-              </Link>
-            </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-2 mt-8 text-sm text-white/75">
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-blue-300" /> Authentic &amp; guaranteed</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-blue-300" /> Cold-chain shipping</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-blue-300" /> Licensed pros only</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ── HERO SLIDESHOW ───────────────────────────────────────────── */}
+      <HeroSlideshow />
 
       {/* ── TRUST BAR ────────────────────────────────────────────────── */}
       <section className="bg-white border-b">
@@ -102,6 +74,9 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* ── BRAND MARQUEE ────────────────────────────────────────────── */}
+      <BrandMarquee brands={brands} />
 
       {/* ── CATEGORIES ───────────────────────────────────────────────── */}
       <section className="max-w-7xl mx-auto px-4 py-14">
@@ -138,6 +113,9 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* ── MONTHLY HIGHLIGHTS ───────────────────────────────────────── */}
+      <HighlightSlides />
 
       {/* ── CASH BACK & REFERRAL ─────────────────────────────────────── */}
       <section className="max-w-7xl mx-auto px-4 py-14">

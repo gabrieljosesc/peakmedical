@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronRight, ExternalLink, Minus, Plus, ShoppingCart } from 'lucide-react'
 import { Product } from '@/types'
+import type { DoseOption } from '@/lib/peptide-doses'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/utils'
 import { parsePriceTiers, unitPriceForQuantity, tierQuantityLabel } from '@/lib/price-tiers'
@@ -12,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 
-export default function ProductDetail({ product }: { product: Product }) {
+export default function ProductDetail({ product, doseOptions = [] }: { product: Product; doseOptions?: DoseOption[] }) {
   const { addToCart } = useCart()
   const [qty, setQty] = useState(1)
   const [activeImg, setActiveImg] = useState(0)
@@ -95,6 +96,34 @@ export default function ProductDetail({ product }: { product: Product }) {
             </Link>
           )}
           <h1 className="text-2xl font-bold text-gray-900 mt-1 mb-4 leading-snug">{product.title}</h1>
+
+          {/* Dose selector (peptides at multiple strengths) */}
+          {doseOptions.length > 1 && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Dose</p>
+              <div className="flex flex-wrap gap-2">
+                {doseOptions.map(opt =>
+                  opt.current ? (
+                    <span
+                      key={opt.slug}
+                      aria-current="true"
+                      className="rounded-lg border-2 border-[#1a3a5c] bg-[#1a3a5c] px-3.5 py-1.5 text-sm font-semibold text-white"
+                    >
+                      {opt.dose}
+                    </span>
+                  ) : (
+                    <Link
+                      key={opt.slug}
+                      href={`/product/${opt.slug}`}
+                      className="rounded-lg border-2 border-gray-200 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-[#1a3a5c] hover:text-[#1a3a5c]"
+                    >
+                      {opt.dose}
+                    </Link>
+                  )
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="mb-4">
             {showPrice ? (

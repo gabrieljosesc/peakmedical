@@ -7,7 +7,7 @@ import { ShoppingCart, Heart, User, Search, Menu, Phone, ChevronDown, X } from '
 import { useState } from 'react'
 import { useCart } from '@/hooks/useCart'
 import { useWishlist } from '@/hooks/useWishlist'
-import { cn } from '@/lib/utils'
+import { cn, formatPrice } from '@/lib/utils'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import SearchBar from '@/components/products/SearchBar'
@@ -20,14 +20,22 @@ interface Category {
   parent_id: string | null
 }
 
+interface NavSample {
+  slug: string
+  title: string
+  base_price: number
+  image: string | null
+}
+
 interface Props {
   user: { id: string; email?: string } | null
   categories: Category[]
+  navSamples?: NavSample[]
   isAdmin?: boolean
   displayName?: string | null
 }
 
-export default function Navbar({ user, categories, isAdmin, displayName }: Props) {
+export default function Navbar({ user, categories, navSamples = [], isAdmin, displayName }: Props) {
   const { count } = useCart()
   const { count: wishCount } = useWishlist()
   const pathname = usePathname()
@@ -85,26 +93,61 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
               Products <ChevronDown className="w-4 h-4" />
             </button>
             <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 hidden group-hover:block z-50">
-              <div className="w-[520px] bg-white rounded-xl border shadow-xl p-4 grid grid-cols-2 gap-1">
-                {categories.map(cat => (
+              <div className="w-[720px] bg-white rounded-xl border shadow-xl p-4 grid grid-cols-[1fr_280px] gap-4">
+                {/* Categories */}
+                <div>
+                  <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Shop by Category</p>
+                  <div className="grid grid-cols-2 gap-0.5">
+                    {categories.map(cat => (
+                      <Link
+                        key={cat.slug}
+                        href={`/shop/${cat.slug}`}
+                        className="rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#1a3a5c] transition-colors"
+                      >
+                        {cat.name}
+                      </Link>
+                    ))}
+                  </div>
                   <Link
-                    key={cat.slug}
-                    href={`/shop/${cat.slug}`}
-                    className="rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#1a3a5c] transition-colors"
+                    href="/shop"
+                    className="mt-2 block rounded-lg px-3 py-2 text-sm font-semibold text-[#1a3a5c] bg-blue-50 hover:bg-blue-100 text-center transition-colors"
                   >
-                    {cat.name}
+                    View All Products →
                   </Link>
-                ))}
-                <Link
-                  href="/shop"
-                  className="col-span-2 mt-1 rounded-lg px-3 py-2 text-sm font-semibold text-[#1a3a5c] bg-blue-50 hover:bg-blue-100 text-center transition-colors"
-                >
-                  View All Products →
-                </Link>
+                </div>
+
+                {/* Featured product thumbnails */}
+                {navSamples.length > 0 && (
+                  <div className="border-l pl-4">
+                    <p className="px-1 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Featured</p>
+                    <div className="space-y-1">
+                      {navSamples.map(p => (
+                        <Link
+                          key={p.slug}
+                          href={`/product/${p.slug}`}
+                          className="flex items-center gap-3 rounded-lg p-2 hover:bg-gray-50 transition-colors group/item"
+                        >
+                          <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-md border bg-gray-50">
+                            {p.image ? (
+                              <Image src={p.image} alt="" fill className="object-contain p-1" sizes="48px" unoptimized />
+                            ) : (
+                              <ShoppingCart className="absolute inset-0 m-auto w-4 h-4 text-gray-300" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-medium text-gray-800 group-hover/item:text-[#1a3a5c]">{p.title}</p>
+                            {p.base_price > 0 && <p className="text-xs font-semibold text-[#1a3a5c]">{formatPrice(p.base_price)}</p>}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
+          {navLink('/peptides', 'Peptides', pathname === '/peptides')}
           {navLink('/about', 'About us', pathname === '/about')}
           {navLink('/blog', 'Blog', pathname.startsWith('/blog'))}
           {navLink('/contact', 'Contact us', pathname === '/contact')}
@@ -195,6 +238,7 @@ export default function Navbar({ user, categories, isAdmin, displayName }: Props
                 ))}
                 <Link href="/shop" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-semibold text-[#1a3a5c] hover:bg-gray-100 rounded-md">All Products →</Link>
                 <div className="pt-2 mt-2 border-t space-y-0.5">
+                  <Link href="/peptides" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#1a3a5c]">Peptides</Link>
                   <Link href="/about" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#1a3a5c]">About us</Link>
                   <Link href="/blog" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#1a3a5c]">Blog</Link>
                   <Link href="/contact" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#1a3a5c]">Contact us</Link>
