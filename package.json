@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "seed:catalog": "node scripts/seed-catalog.mjs",
     "seed:peptides": "node scripts/seed-peptides.mjs",
     "rebuild:peptides": "node scripts/rebuild-peptides.mjs",
@@ -40,6 +42,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/google.maps": "^3.65.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
@@ -47,8 +50,10 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "jest": "^30.4.2",
     "mammoth": "^1.12.0",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "tsx": "^4.22.3",
     "typescript": "^5",
     "xlsx": "^0.18.5"
