@@ -34,6 +34,8 @@ const args = Object.fromEntries(
 );
 const LIMIT  = parseInt(args.limit  ?? "9999");
 const OFFSET = parseInt(args.offset ?? "0");
+// --only=email@x.com  → send to just that one address (safe pre-launch test)
+const ONLY   = (typeof args.only === "string" ? args.only : "").toLowerCase().trim();
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -67,10 +69,17 @@ async function main() {
 
   // Only target migrated users (no password set = they have no last_sign_in_at)
   // AND only users with migrated: true in metadata
-  const targets = allUsers
-    .filter((u) => u.user_metadata?.migrated === true || u.last_sign_in_at == null)
-    .filter((u) => u.email)
-    .slice(OFFSET, OFFSET + LIMIT);
+  const targets = ONLY
+    ? allUsers.filter((u) => u.email && u.email.toLowerCase() === ONLY)
+    : allUsers
+        .filter((u) => u.user_metadata?.migrated === true || u.last_sign_in_at == null)
+        .filter((u) => u.email)
+        .slice(OFFSET, OFFSET + LIMIT);
+
+  if (ONLY && targets.length === 0) {
+    console.error(`No account found for --only=${ONLY}. Check the address and try again.`);
+    process.exit(1);
+  }
 
   console.log(`Total users: ${allUsers.length}`);
   console.log(`Targets for reset (offset=${OFFSET}, limit=${LIMIT}): ${targets.length}`);
