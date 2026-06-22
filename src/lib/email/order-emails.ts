@@ -4,7 +4,12 @@ import { sendTransactionalEmail, type SendEmailResult } from '@/lib/email/send'
 
 const SITE_EMAIL = process.env.NOTIFICATION_EMAIL?.trim() || 'info@peakmedicalwholesale.com'
 const SITE_PHONE = '+1-888-222-0373'
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://peakmedicalwholesale.com'
+// Emails are read outside the app, so links must be absolute and public —
+// never localhost. Ignore a dev/misconfigured NEXT_PUBLIC_SITE_URL.
+const RAW_SITE = process.env.NEXT_PUBLIC_SITE_URL?.trim()
+const SITE_URL = RAW_SITE && !/localhost|127\.0\.0\.1/.test(RAW_SITE)
+  ? RAW_SITE
+  : 'https://peakmedicalwholesale.com'
 
 export type OrderStatus = 'pending_csr' | 'confirmed' | 'shipped' | 'cancelled'
 
