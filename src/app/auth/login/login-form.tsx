@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { loginAction, type LoginState } from '@/app/actions/auth'
@@ -17,6 +17,10 @@ export function LoginForm() {
 
   const [state, action, pending] = useActionState(loginAction, null)
   const error = state && 'error' in state ? state.error : null
+
+  // Controlled so a failed login (server-action re-render) keeps what was typed
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4">
@@ -54,6 +58,7 @@ export function LoginForm() {
             <Label htmlFor="email">Email address</Label>
             <Input
               id="email" name="email" type="email"
+              value={email} onChange={e => setEmail(e.target.value)}
               autoComplete="email" required
               className="mt-1"
             />
@@ -71,6 +76,7 @@ export function LoginForm() {
             </div>
             <Input
               id="password" name="password" type="password"
+              value={password} onChange={e => setPassword(e.target.value)}
               autoComplete="current-password" required
               className="mt-1"
             />
