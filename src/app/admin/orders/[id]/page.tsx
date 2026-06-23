@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
 import { updateOrderAction } from '@/app/actions/admin'
+import { OrderItemsEditor } from './order-items-editor'
 import { formatPrice } from '@/lib/utils'
 import { decryptCardCvv } from '@/lib/payment-card-crypto'
 import type { ShippingAddress } from '@/types'
@@ -170,38 +171,18 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Pro
         </section>
       )}
 
-      {/* Items */}
-      <section className="mt-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Items</h2>
-        <ul className="mt-3 space-y-2">
-          {items.map((it: { id: string; title: string; quantity: number; unit_price: number }) => (
-            <li key={it.id} className="flex justify-between text-sm">
-              <span className="text-gray-800">{it.title} <span className="text-gray-400">× {it.quantity}</span></span>
-              <span className="font-medium text-gray-900">{formatPrice(Number(it.unit_price) * it.quantity)}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-4 space-y-1 border-t border-gray-100 pt-3 text-sm">
-          <div className="flex justify-between text-gray-600">
-            <span>Subtotal</span>
-            <span>{formatPrice(Number(order.subtotal))}</span>
-          </div>
-          {Number(order.discount_amount ?? 0) > 0 && (
-            <div className="flex justify-between text-green-700">
-              <span>Discount{order.coupon_code ? ` (${order.coupon_code})` : ''}</span>
-              <span>−{formatPrice(Number(order.discount_amount))}</span>
-            </div>
-          )}
-          <div className="flex justify-between text-gray-600">
-            <span>Shipping</span>
-            <span>{Number(order.shipping_amount ?? 0) > 0 ? formatPrice(Number(order.shipping_amount)) : 'Free'}</span>
-          </div>
-          <div className="flex justify-between pt-1.5 font-semibold text-gray-900 border-t border-gray-100">
-            <span>Total</span>
-            <span>{formatPrice(Number(order.total ?? order.subtotal))}</span>
-          </div>
-        </div>
-      </section>
+      {/* Items (editable) */}
+      <OrderItemsEditor
+        orderId={order.id}
+        initialItems={items.map((it: { product_id: string | null; title: string; quantity: number; unit_price: number }) => ({
+          product_id: it.product_id ?? null,
+          title: it.title,
+          quantity: Number(it.quantity),
+          unit_price: Number(it.unit_price),
+        }))}
+        initialShipping={Number(order.shipping_amount ?? 0)}
+        discount={Number(order.discount_amount ?? 0)}
+      />
 
       {/* Update form */}
       <form action={updateOrderAction} className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">

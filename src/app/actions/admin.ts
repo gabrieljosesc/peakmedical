@@ -126,6 +126,55 @@ export async function updateOrderAction(formData: FormData): Promise<void> {
   redirect(`/admin/orders/${id}?saved=1`)
 }
 
+export type OrderItemInput = { product_id: string | null; title: string; quantity: number; unit_price: number }
+
+/**
+ * Admin order editing: replace an order's line items (add/remove/edit price &
+ * quantity) and the shipping amount, then recompute subtotal and total. The
+ * coupon discount is preserved. No customer email is sent — the admin notifies
+ * separately via the status update if/when they choose to.
+ */
+export async function saveOrderItemsAction(input: {
+  orderId: string
+  items: OrderItemInput[]
+  shippingAmount: number
+}): Promise<{ ok: boolean; message?: string }> {
+  await requireAdmin()
+  const svc = createAdminClient()
+
+  const clean = (input.items ?? [])
+    .map(i => ({
+      product_id: i.product_id || null,
+      title: String(i.title ?? '').trim(),
+      quantity: Math.max(1, Math.floor(Number(i.quantity) || 1)),
+      unit_price: Math.max(0, Number(i.unit_price) || 0),
+    }))
+    .filter(i => i.title)
+
+  if (!clean.length) return { ok: false, message: 'An order must have at least one item.' }
+
+  const { data: order, error: oErr } = await svc.from('orders').select('discount_amount').eq('id', input.orderId).single()
+  if (oErr || !order) return { ok: false, message: 'Order not found.' }
+
+  const subtotal = clean.reduce((s, i) => s + i.quantity * i.unit_price, 0)
+  const discount = Number(order.discount_amount ?? 0)
+  const shipping = Math.max(0, Number(input.shippingAmount) || 0)
+  const total = Math.max(0, subtotal - discount) + shipping
+
+  await svc.from('order_items').delete().eq('order_id', input.orderId)
+  const { error: insErr } = await svc.from('order_items').insert(clean.map(i => ({ ...i, order_id: input.orderId })))
+  if (insErr) return { ok: false, message: insErr.message }
+
+  const { error: updErr } = await svc
+    .from('orders')
+    .update({ subtotal, shipping_amount: shipping, total, updated_at: new Date().toISOString() })
+    .eq('id', input.orderId)
+  if (updErr) return { ok: false, message: updErr.message }
+
+  revalidatePath(`/admin/orders/${input.orderId}`)
+  return { ok: true }
+}
+
 // ── Blog ────────────────────────────────────────────────────────────────────
 export async function upsertBlogPostAction(formData: FormData): Promise<void> {
   const { supabase } = await requireAdmin()
