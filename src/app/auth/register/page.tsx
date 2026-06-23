@@ -306,8 +306,8 @@ function RegisterForm() {
             </div>
           </div>
 
-          {/* ── Professional Information ──────────────────────────────── */}
-          <SectionHeading>Professional Information</SectionHeading>
+          {/* ── Business Information ──────────────────────────────────── */}
+          <SectionHeading>Business Information</SectionHeading>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -333,16 +333,6 @@ function RegisterForm() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="profession">Profession <span className="text-red-500">*</span></Label>
-              <Input
-                id="profession" name="profession"
-                defaultValue={val(state, 'profession')}
-                placeholder="e.g. Physician, Nurse Practitioner"
-                className={`mt-1 ${err(state, 'profession') ? 'border-red-400 bg-red-50' : ''}`}
-              />
-              <FieldError msg={err(state, 'profession')} />
-            </div>
-            <div>
               <Label htmlFor="specialty">Specialty</Label>
               <Input
                 id="specialty" name="specialty"
@@ -350,6 +340,45 @@ function RegisterForm() {
                 placeholder="e.g. Dermatology, Aesthetics"
                 className="mt-1"
               />
+            </div>
+            <div>
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website" name="website" type="url" autoComplete="url"
+                defaultValue={val(state, 'website')}
+                placeholder="https://yourclinic.com (optional)"
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          {/* ── Medical License ──────────────────────────────────────── */}
+          <SectionHeading>Medical License</SectionHeading>
+          <p className="text-xs text-gray-500 -mt-2">
+            Details of the licensed professional these orders are placed under. If you are the
+            business owner, this can be a doctor at your clinic.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="license_holder_name">Name <span className="text-red-500">*</span></Label>
+              <Input
+                id="license_holder_name" name="license_holder_name"
+                defaultValue={val(state, 'license_holder_name')}
+                placeholder="Name on the license"
+                className={`mt-1 ${err(state, 'license_holder_name') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'license_holder_name')} />
+            </div>
+            <div>
+              <Label htmlFor="profession">License Type <span className="text-red-500">*</span></Label>
+              <Input
+                id="profession" name="profession"
+                defaultValue={val(state, 'profession')}
+                placeholder="e.g. Physician, Aesthetician, Nurse Practitioner"
+                className={`mt-1 ${err(state, 'profession') ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              <FieldError msg={err(state, 'profession')} />
             </div>
           </div>
 
@@ -364,7 +393,7 @@ function RegisterForm() {
               <FieldError msg={err(state, 'license_number')} />
             </div>
             <div>
-              <Label htmlFor="license_expiry">License Expiry Date <span className="text-red-500">*</span></Label>
+              <Label htmlFor="license_expiry">Expiry Date <span className="text-red-500">*</span></Label>
               <Input
                 id="license_expiry" name="license_expiry" type="date"
                 defaultValue={val(state, 'license_expiry')}
@@ -376,7 +405,7 @@ function RegisterForm() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="license_state">State / County Issued <span className="text-red-500">*</span></Label>
+              <Label htmlFor="license_state">State Issued <span className="text-red-500">*</span></Label>
               <Input
                 id="license_state" name="license_state"
                 defaultValue={val(state, 'license_state')}
@@ -395,16 +424,6 @@ function RegisterForm() {
               />
               <FieldError msg={err(state, 'license_country')} />
             </div>
-          </div>
-
-          <div>
-            <Label htmlFor="website">Website</Label>
-            <Input
-              id="website" name="website" type="url" autoComplete="url"
-              defaultValue={val(state, 'website')}
-              placeholder="https://yourclinic.com (optional)"
-              className="mt-1"
-            />
           </div>
 
           {/* ── Agreement ─────────────────────────────────────────────── */}

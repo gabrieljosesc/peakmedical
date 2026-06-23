@@ -51,7 +51,6 @@ export default async function AdminUserDetailPage({ params }: Props) {
             {row('Email', profile.email)}
             {row('Phone', profile.phone)}
             {row('Company', profile.company)}
-            {row('Profession', profile.profession)}
             {row('Role', <span className="capitalize">{profile.role ?? 'customer'}</span>)}
             {row('Joined', profile.created_at ? new Date(profile.created_at).toLocaleDateString() : '—')}
           </dl>
@@ -61,6 +60,8 @@ export default async function AdminUserDetailPage({ params }: Props) {
         <section className="rounded-xl border border-[#1a3a5c]/20 bg-blue-50/50 p-4 shadow-sm">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-[#1a3a5c]">License & Address</h2>
           <dl className="mt-3 space-y-1 text-sm">
+            {row('Name', profile.license_holder_name)}
+            {row('License Type', profile.profession)}
             {row('License #', <span className="font-mono">{profile.license_number}</span>)}
             {row('Expiry', profile.license_expiry ? String(profile.license_expiry).slice(0, 10) : '—')}
             {row('State issued', profile.license_state)}

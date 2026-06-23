@@ -33,6 +33,7 @@ export default async function ProfilePage() {
           phone: profile?.phone ?? '',
           company: profile?.company ?? '',
           profession: profile?.profession ?? '',
+          license_holder_name: profile?.license_holder_name ?? '',
           specialty: profile?.specialty ?? '',
           business_phone: profile?.business_phone ?? '',
           website: profile?.website ?? '',

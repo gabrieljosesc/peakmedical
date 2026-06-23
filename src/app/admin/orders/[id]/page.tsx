@@ -60,11 +60,14 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Pro
   if (!order) notFound()
 
   // Look up customer's license info from their profile (if registered)
-  let license: { license_number?: string; license_expiry?: string; profession?: string } | null = null
+  let license: {
+    license_holder_name?: string; license_number?: string
+    license_expiry?: string; profession?: string; license_state?: string
+  } | null = null
   if (order.user_id) {
     const { data: prof } = await svc
       .from('profiles')
-      .select('license_number, license_expiry, profession')
+      .select('license_holder_name, license_number, license_expiry, profession, license_state')
       .eq('id', order.user_id)
       .single()
     license = prof
@@ -114,9 +117,11 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Pro
         <section className="rounded-xl border border-[#1a3a5c]/20 bg-blue-50/50 p-4 shadow-sm">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-[#1a3a5c]">Medical License</h2>
           <div className="mt-2 space-y-1 text-sm">
-            <p><span className="text-gray-500">Profession:</span> <span className="text-gray-900">{license?.profession ?? '—'}</span></p>
+            <p><span className="text-gray-500">Name:</span> <span className="text-gray-900">{license?.license_holder_name ?? '—'}</span></p>
+            <p><span className="text-gray-500">License Type:</span> <span className="text-gray-900">{license?.profession ?? '—'}</span></p>
             <p><span className="text-gray-500">License #:</span> <span className="font-mono text-gray-900">{license?.license_number ?? '—'}</span></p>
             <p><span className="text-gray-500">Expiry:</span> <span className="text-gray-900">{license?.license_expiry ? String(license.license_expiry).slice(0, 10) : '—'}</span></p>
+            <p><span className="text-gray-500">State issued:</span> <span className="text-gray-900">{license?.license_state ?? '—'}</span></p>
           </div>
         </section>
 

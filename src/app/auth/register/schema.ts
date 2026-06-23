@@ -24,9 +24,10 @@ export const registerSchema = z
       .min(7, 'Phone number is required')
       .regex(/^[\d\s\-+().]{7,}$/, 'Enter a valid phone number'),
 
-    // Professional
+    // Business + medical license
     company: z.string().trim().min(1, 'Company / clinic name is required').max(200),
-    profession: z.string().trim().min(1, 'Profession is required').max(200),
+    license_holder_name: z.string().trim().min(1, 'Name on the license is required').max(200),
+    profession: z.string().trim().min(1, 'License type is required').max(200),
     specialty: z.string().trim().max(200).optional(),
     license_number: z.string().trim().min(1, 'License number is required').max(120),
     license_expiry: z.string().min(1, 'License expiry date is required'),

@@ -9,6 +9,7 @@ interface ProfileData {
   phone: string
   company: string
   profession: string
+  license_holder_name: string
   specialty: string
   business_phone: string
   website: string
@@ -51,39 +52,41 @@ export function ProfileForms({ profile, emailMasked }: { profile: ProfileData; e
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm">
-                <span className={labelClass}>Profession</span>
-                <input name="profession" defaultValue={profile.profession} className={inputClass} />
-              </label>
-              <label className="block text-sm">
                 <span className={labelClass}>Specialty</span>
                 <input name="specialty" defaultValue={profile.specialty} className={inputClass} />
               </label>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm">
                 <span className={labelClass}>Business phone</span>
                 <input name="business_phone" defaultValue={profile.business_phone} className={inputClass} />
               </label>
-              <label className="block text-sm">
-                <span className={labelClass}>Website</span>
-                <input name="website" type="url" defaultValue={profile.website} placeholder="https://…" className={inputClass} />
-              </label>
             </div>
+            <label className="block text-sm">
+              <span className={labelClass}>Website</span>
+              <input name="website" type="url" defaultValue={profile.website} placeholder="https://…" className={inputClass} />
+            </label>
 
             <div className="pt-2 border-t border-gray-100">
               <h3 className="text-sm font-semibold text-gray-700 mt-3 mb-1">Medical License</h3>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm">
+                <span className={labelClass}>Name</span>
+                <input name="license_holder_name" defaultValue={profile.license_holder_name} placeholder="Name on the license" className={inputClass} />
+              </label>
+              <label className="block text-sm">
+                <span className={labelClass}>License type</span>
+                <input name="profession" defaultValue={profile.profession} placeholder="e.g. Physician, Aesthetician" className={inputClass} />
+              </label>
+              <label className="block text-sm">
                 <span className={labelClass}>License number</span>
                 <input name="license_number" defaultValue={profile.license_number} className={inputClass} />
               </label>
               <label className="block text-sm">
-                <span className={labelClass}>License expiry</span>
+                <span className={labelClass}>Expiry date</span>
                 <input name="license_expiry" type="date" defaultValue={profile.license_expiry ? String(profile.license_expiry).slice(0, 10) : ''} className={inputClass} />
               </label>
               <label className="block text-sm">
-                <span className={labelClass}>State / county issued</span>
+                <span className={labelClass}>State issued</span>
                 <input name="license_state" defaultValue={profile.license_state} className={inputClass} />
               </label>
               <label className="block text-sm">
