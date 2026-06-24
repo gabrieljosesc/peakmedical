@@ -32,6 +32,9 @@ const SITE = (typeof args.site === 'string' && args.site) || 'https://www.peakme
 const REDIRECT = `${SITE}/auth/confirm?type=recovery&next=/auth/update-password`
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
+// Guards against a hung network call freezing the whole campaign.
+const withTimeout = (p, ms, what) =>
+  Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(`${what} timed out after ${ms}ms`)), ms))])
 
 async function fetchAllAuthUsers(sb) {
   const all = []; let page = 1
@@ -85,21 +88,28 @@ async function main() {
   }
   if (DRY || !batch.length) { console.log('\n(no emails sent)'); return }
 
+  const sendOnce = email =>
+    withTimeout(anon.auth.resetPasswordForEmail(email, { redirectTo: REDIRECT }), 30000, 'send')
+      .then(r => r.error || null)
+      .catch(e => ({ message: e.message, status: 0 }))
+
   let sent = 0, failed = 0
   for (const user of batch) {
-    let { error } = await anon.auth.resetPasswordForEmail(user.email, { redirectTo: REDIRECT })
+    let error = await sendOnce(user.email)
     if (error && (error.status === 429 || /rate limit/i.test(error.message))) {
       console.warn(`  rate-limited on ${user.email} — waiting 60s`); await sleep(60000)
-      ;({ error } = await anon.auth.resetPasswordForEmail(user.email, { redirectTo: REDIRECT }))
+      error = await sendOnce(user.email)
     }
     if (error) { console.error(`  FAIL ${user.email}: ${error.message}`); failed++ }
     else {
       // mark sent (merge, preserving migrated/wp_user_id/full_name)
-      await admin.auth.admin.updateUserById(user.id, {
-        user_metadata: { ...user.user_metadata, pw_reset_sent_at: new Date().toISOString() },
-      })
+      try {
+        await withTimeout(admin.auth.admin.updateUserById(user.id, {
+          user_metadata: { ...user.user_metadata, pw_reset_sent_at: new Date().toISOString() },
+        }), 20000, 'mark-sent')
+      } catch (e) { console.warn(`  warn: ${user.email} sent but not marked: ${e.message}`) }
       sent++
-      if (sent % 20 === 0) console.log(`  …sent ${sent}/${batch.length}`)
+      if (sent % 10 === 0) console.log(`  …sent ${sent}/${batch.length} (${new Date().toISOString().slice(11, 19)})`)
     }
     await sleep(DELAY)
   }
