@@ -26,6 +26,8 @@ const args = Object.fromEntries(
 const LIMIT = parseInt(args.limit ?? '300')
 const DELAY = parseInt(args.delay ?? '120000') // 2 min between sends
 const DRY = Boolean(args.dry)
+const ORDERED_ONLY = Boolean(args['ordered-only']) // only customers with >=1 order, newest order first
+const EXCLUDE = new Set(String(args.exclude || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean))
 const SITE = (typeof args.site === 'string' && args.site) || 'https://www.peakmedicalwholesale.com'
 const REDIRECT = `${SITE}/auth/confirm?type=recovery&next=/auth/update-password`
 
@@ -49,19 +51,36 @@ async function main() {
 
   const all = await fetchAllAuthUsers(admin)
   const migrated = all.filter(u => u.user_metadata?.migrated === true && u.email)
-  const alreadySent = migrated.filter(u => u.user_metadata?.pw_reset_sent_at)
-  const pending = migrated
-    .filter(u => !u.user_metadata?.pw_reset_sent_at)
-    .sort((a, b) => Number(b.user_metadata.wp_user_id || 0) - Number(a.user_metadata.wp_user_id || 0)) // newest first
+
+  // Most-recent order date per customer email (only used in --ordered-only mode)
+  let latestOrderByEmail = new Map()
+  if (ORDERED_ONLY) {
+    const { data: orders } = await admin.from('orders').select('email, created_at')
+    for (const o of orders ?? []) {
+      const e = (o.email || '').toLowerCase().trim(); if (!e) continue
+      const t = new Date(o.created_at).getTime()
+      if (!latestOrderByEmail.has(e) || t > latestOrderByEmail.get(e)) latestOrderByEmail.set(e, t)
+    }
+  }
+  const orderDate = u => latestOrderByEmail.get(u.email.toLowerCase()) ?? 0
+
+  let candidates = migrated.filter(u => !EXCLUDE.has(u.email.toLowerCase()))
+  if (ORDERED_ONLY) candidates = candidates.filter(u => latestOrderByEmail.has(u.email.toLowerCase()))
+
+  const alreadySent = candidates.filter(u => u.user_metadata?.pw_reset_sent_at)
+  const pending = candidates.filter(u => !u.user_metadata?.pw_reset_sent_at)
+  pending.sort((a, b) => ORDERED_ONLY
+    ? orderDate(b) - orderDate(a)                                                   // most recent order first
+    : Number(b.user_metadata.wp_user_id || 0) - Number(a.user_metadata.wp_user_id || 0)) // newest registration first
 
   const batch = pending.slice(0, LIMIT)
-  console.log(`Migrated customers: ${migrated.length}`)
-  console.log(`  already emailed:   ${alreadySent.length}`)
-  console.log(`  still pending:     ${pending.length}`)
-  console.log(`This run: ${batch.length} (newest first) | delay ${Math.round(DELAY / 1000)}s${DRY ? ' | DRY RUN' : ''}`)
+  const mode = ORDERED_ONLY ? 'customers with orders, most recent order first' : 'all migrated, newest registration first'
+  console.log(`Target pool: ${candidates.length} (${mode})`)
+  if (EXCLUDE.size) console.log(`  excluded: ${[...EXCLUDE].join(', ')}`)
+  console.log(`  already emailed: ${alreadySent.length} | still pending: ${pending.length}`)
+  console.log(`This run: ${batch.length} | delay ${Math.round(DELAY / 1000)}s${DRY ? ' | DRY RUN' : ''}`)
   if (batch.length) {
-    const wp = batch.map(u => Number(u.user_metadata.wp_user_id))
-    console.log(`  WP id range this batch: ${wp[0]} (newest) → ${wp[wp.length - 1]}`)
+    if (ORDERED_ONLY) console.log(`  top: ${batch[0].email} (order ${new Date(orderDate(batch[0])).toISOString().slice(0, 10)})`)
     console.log(`  first 3: ${batch.slice(0, 3).map(u => u.email).join(', ')}`)
   }
   if (DRY || !batch.length) { console.log('\n(no emails sent)'); return }
