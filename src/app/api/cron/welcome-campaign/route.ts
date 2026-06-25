@@ -29,7 +29,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const BATCH = Math.max(1, parseInt(process.env.CAMPAIGN_BATCH_SIZE ?? '3'))
+  // Supabase rate-limits reset requests to ~1 per 60s, so each tick sends ONE
+  // email — the pacing comes from the cron schedule, never a burst.
+  const BATCH = Math.max(1, parseInt(process.env.CAMPAIGN_BATCH_SIZE ?? '1'))
   const MODE = process.env.CAMPAIGN_MODE ?? 'ordered'
   const EXCLUDE = new Set(
     String(process.env.CAMPAIGN_EXCLUDE ?? 'gabbymayuga77@gmail.com')
