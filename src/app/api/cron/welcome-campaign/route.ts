@@ -69,8 +69,10 @@ export async function GET(request: NextRequest) {
   let cands = migrated.filter(u => !EXCLUDE.has(u.email!.toLowerCase()))
   if (MODE === 'ordered') cands = cands.filter(u => latest.has(u.email!.toLowerCase()))
 
+  // Skip addresses that have failed repeatedly (e.g. dead emails) so a single
+  // bad address at the front of the queue can't block the whole campaign.
   const pending = cands
-    .filter(u => !u.user_metadata?.pw_reset_sent_at)
+    .filter(u => !u.user_metadata?.pw_reset_sent_at && Number(u.user_metadata?.pw_reset_attempts || 0) < 3)
     .sort((a, b) => MODE === 'ordered'
       ? odate(b) - odate(a)
       : Number(b.user_metadata?.wp_user_id || 0) - Number(a.user_metadata?.wp_user_id || 0))
@@ -79,7 +81,14 @@ export async function GET(request: NextRequest) {
   let sent = 0, failed = 0
   for (const u of batch) {
     const { error } = await anon.auth.resetPasswordForEmail(u.email!, { redirectTo: REDIRECT })
-    if (error) { failed++; continue }
+    if (error) {
+      // record the attempt so a persistently-failing address gets set aside
+      await admin.auth.admin.updateUserById(u.id, {
+        user_metadata: { ...u.user_metadata, pw_reset_attempts: Number(u.user_metadata?.pw_reset_attempts || 0) + 1 },
+      })
+      failed++
+      continue
+    }
     await admin.auth.admin.updateUserById(u.id, {
       user_metadata: { ...u.user_metadata, pw_reset_sent_at: new Date().toISOString() },
     })
