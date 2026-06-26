@@ -148,7 +148,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   // Card snapshot + encrypted CVV
   const { data: card } = await svc
     .from('user_saved_cards')
-    .select('id, brand, last4, exp_month, exp_year, name_on_card')
+    .select('id, brand, last4, exp_month, exp_year, name_on_card, pan_encrypted')
     .eq('id', input.cardId)
     .eq('user_id', user.id)
     .single()
@@ -198,6 +198,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
           brand: card.brand, last4: card.last4,
           exp_month: card.exp_month, exp_year: card.exp_year,
           name_on_card: card.name_on_card, cvv_encrypted: cvvEncrypted,
+          pan_encrypted: card.pan_encrypted ?? null,
         },
       })
       .select('id')

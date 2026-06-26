@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { updateOrderAction } from '@/app/actions/admin'
 import { OrderItemsEditor } from './order-items-editor'
 import { formatPrice } from '@/lib/utils'
-import { decryptCardCvv } from '@/lib/payment-card-crypto'
+import { decryptCardCvv, decryptCardPan } from '@/lib/payment-card-crypto'
 import type { ShippingAddress } from '@/types'
 
 type CardSnapshot = {
@@ -14,6 +14,11 @@ type CardSnapshot = {
   exp_year?: number
   name_on_card?: string
   cvv_encrypted?: string
+  pan_encrypted?: string | null
+}
+
+function formatPan(pan: string): string {
+  return pan.replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim()
 }
 
 export const dynamic = 'force-dynamic'
@@ -78,6 +83,27 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Pro
   const shipping = order.shipping_address as ShippingAddress | null
   const billing = (order.billing_address ?? null) as ShippingAddress | null
   const hasBilling = Boolean(billing?.address_line1)
+
+  // Resolve full card number for manual processing (admin-only page).
+  // Newer orders store the encrypted PAN in the snapshot; for older orders we
+  // fall back to the customer's saved card matched on last4.
+  const card = order.payment_card_snapshot as CardSnapshot | null
+  let cardPanEncrypted = card?.pan_encrypted ?? null
+  if (!cardPanEncrypted && order.user_id && card?.last4) {
+    const { data: savedCard } = await svc
+      .from('user_saved_cards')
+      .select('pan_encrypted')
+      .eq('user_id', order.user_id)
+      .eq('last4', card.last4)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    cardPanEncrypted = savedCard?.pan_encrypted ?? null
+  }
+  let cardFullNumber: string | null = null
+  if (cardPanEncrypted) {
+    try { cardFullNumber = formatPan(decryptCardPan(cardPanEncrypted)) } catch { cardFullNumber = null }
+  }
 
   return (
     <div className="max-w-3xl">
@@ -144,7 +170,6 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Pro
         <section className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm sm:col-span-2">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-amber-700">Payment Card (process manually)</h2>
           {(() => {
-            const card = order.payment_card_snapshot as CardSnapshot | null
             if (!card || !card.last4) {
               return <p className="mt-2 text-sm text-gray-500">No card captured for this order.</p>
             }
@@ -152,11 +177,17 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Pro
             try { cvv = card.cvv_encrypted ? decryptCardCvv(card.cvv_encrypted) : '—' } catch { cvv = 'decrypt error' }
             return (
               <div className="mt-2 text-sm text-gray-800 space-y-1">
-                <p><span className="text-gray-500">Card:</span> {(card.brand ?? 'Card').toUpperCase()} ···· {card.last4}</p>
+                <p>
+                  <span className="text-gray-500">Card number:</span>{' '}
+                  {cardFullNumber
+                    ? <span className="font-mono font-semibold tracking-wide">{cardFullNumber}</span>
+                    : <span className="text-gray-500">Not available — only last 4 on file: ···· {card.last4}</span>}
+                </p>
+                <p><span className="text-gray-500">Brand:</span> {(card.brand ?? 'Card').toUpperCase()}</p>
                 <p><span className="text-gray-500">Expiry:</span> {String(card.exp_month).padStart(2, '0')}/{String(card.exp_year).slice(-2)}</p>
                 <p><span className="text-gray-500">Name on card:</span> {card.name_on_card ?? '—'}</p>
                 <p><span className="text-gray-500">CVV:</span> <span className="font-mono font-semibold">{cvv}</span></p>
-                <p className="text-xs text-amber-700 mt-1">Full card number is stored encrypted under the customer&apos;s saved cards. CVV shown here is for this order only.</p>
+                <p className="text-xs text-amber-700 mt-1">Full card details are decrypted for manual processing and visible to admins only. CVV shown here is for this order only.</p>
               </div>
             )
           })()}
