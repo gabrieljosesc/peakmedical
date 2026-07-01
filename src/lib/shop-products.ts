@@ -19,6 +19,8 @@ function buildProductQuery(supabase: SupabaseClient, filters: ShopProductFilters
     .from('products')
     .select(PRODUCT_SELECT, { count: 'exact' })
     .eq('is_active', true)
+    // Return embedded images in hero order so images[0] is the intended main image
+    .order('sort_order', { referencedTable: 'product_images', ascending: true })
 
   if (filters.search) query = query.ilike('title', `%${filters.search}%`)
   if (categoryId) query = query.eq('category_id', categoryId)

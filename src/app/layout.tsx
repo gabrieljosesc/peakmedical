@@ -49,6 +49,7 @@ export default async function RootLayout({
     admin
       .from('products')
       .select('slug, title, base_price, images:product_images(url, sort_order)')
+      .order('sort_order', { referencedTable: 'product_images', ascending: true })
       .eq('is_featured', true)
       .eq('is_active', true)
       .limit(3),

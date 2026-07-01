@@ -46,6 +46,7 @@ export default async function HomePage() {
     supabase.from('categories').select('id, slug, name').is('parent_id', null).order('sort_order').limit(18),
     supabase.from('products')
       .select('*, category:categories(*), images:product_images(id,url,sort_order)')
+      .order('sort_order', { referencedTable: 'product_images', ascending: true })
       .eq('is_featured', true).eq('is_active', true).limit(10),
     supabase.from('blog_posts')
       .select('slug, title, excerpt, published_at')

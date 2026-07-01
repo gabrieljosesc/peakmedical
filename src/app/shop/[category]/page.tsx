@@ -51,6 +51,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   let query = supabase
     .from('products')
     .select('*, category:categories(*), images:product_images(id,url,sort_order)', { count: 'exact' })
+    .order('sort_order', { referencedTable: 'product_images', ascending: true })
     .in('category_id', catIds)
     .eq('is_active', true)
 

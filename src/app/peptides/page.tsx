@@ -29,6 +29,7 @@ export default async function PeptidesPage() {
     ? await supabase
         .from('products')
         .select('*, category:categories(*), images:product_images(id,url,sort_order)')
+        .order('sort_order', { referencedTable: 'product_images', ascending: true })
         .eq('category_id', cat.id)
         .eq('is_active', true)
         .order('title')
