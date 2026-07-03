@@ -2,9 +2,31 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { registerSchema, flattenErrors } from '@/app/auth/register/schema'
 import { sendVerifyEmail, sendPasswordResetEmail } from '@/lib/email/auth-emails'
+
+/**
+ * The base URL for links we email (verify, password reset).
+ *
+ * Prefer a configured canonical domain (NEXT_PUBLIC_SITE_URL), but if it is
+ * unset or points at localhost — as on Vercel where it was never set — derive
+ * the origin from the incoming request so links point at the domain the user
+ * is actually on, never localhost.
+ */
+async function resolveSiteUrl(): Promise<string> {
+  const env = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '')
+  if (env && !/localhost|127\.0\.0\.1/.test(env)) return env
+
+  const h = await headers()
+  const host = h.get('x-forwarded-host') ?? h.get('host')
+  if (host) {
+    const proto = h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https')
+    return `${proto}://${host}`
+  }
+  return env || 'http://localhost:3000'
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────
 export type RegisterState =
@@ -64,7 +86,7 @@ export async function registerAction(
     .join(' ')
     .trim()
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const siteUrl = await resolveSiteUrl()
 
   // Create the user and get a verification link WITHOUT sending Supabase's
   // built-in email — that mailer is rate-limited (~2/hour) and unreliable, so
@@ -204,7 +226,7 @@ export async function forgotPasswordAction(
   const email = String(formData.get('email') ?? '').trim()
   if (!email) return { error: 'Email is required.' }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const siteUrl = await resolveSiteUrl()
 
   // Same as registration: generate the recovery link with the admin API and
   // send it through our own SMTP, bypassing Supabase's rate-limited mailer.
