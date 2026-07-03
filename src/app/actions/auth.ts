@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { registerSchema, flattenErrors } from '@/app/auth/register/schema'
+import { sendVerifyEmail, sendPasswordResetEmail } from '@/lib/email/auth-emails'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 export type RegisterState =
@@ -63,30 +64,48 @@ export async function registerAction(
     .join(' ')
     .trim()
 
-  const supabase = await createClient()
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
-  const { data, error } = await supabase.auth.signUp({
+  // Create the user and get a verification link WITHOUT sending Supabase's
+  // built-in email — that mailer is rate-limited (~2/hour) and unreliable, so
+  // verification emails silently never arrived. We generate the link with the
+  // admin API and send it through our own SMTP instead (same transport as
+  // order emails).
+  const admin = createAdminClient()
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: 'signup',
     email: v.email,
     password: v.password,
-    options: {
-      data: { full_name: fullName },
-      // PKCE: exchange code in /auth/callback, then land on homepage signed in.
-      emailRedirectTo: `${siteUrl}/auth/callback?next=/`,
-    },
+    options: { data: { full_name: fullName } },
   })
 
   if (error) {
-    if (error.message?.toLowerCase().includes('already registered')) {
+    if (/already.*registered|already.*exists/i.test(error.message ?? '')) {
       return { fieldErrors: { email: 'An account with this email already exists.' }, values: { ...raw, password: '', confirm_password: '' } }
     }
     return { error: error.message }
   }
 
+  // Email the confirmation link via our own mail server. /auth/confirm
+  // verifies the token_hash and signs the user in.
+  const confirmUrl =
+    `${siteUrl}/auth/confirm?token_hash=${encodeURIComponent(data.properties?.hashed_token ?? '')}` +
+    `&type=signup&next=${encodeURIComponent('/')}`
+  const sent = await sendVerifyEmail(v.email, confirmUrl)
+  if (!sent.ok) {
+    console.error('[registerAction] verify email failed:', sent.error)
+    // Last resort: Supabase's built-in mailer (rate-limited, but better than nothing)
+    const anon = await createClient()
+    await anon.auth.resend({
+      type: 'signup',
+      email: v.email,
+      options: { emailRedirectTo: `${siteUrl}/auth/callback?next=/` },
+    })
+  }
+
   if (data.user) {
     // Use admin client: during email-confirmation signup there is no session yet,
     // so the anon client would be blocked by RLS. Service role bypasses RLS.
-    const admin = createAdminClient()
 
     await admin.from('profiles').upsert({
       id:              data.user.id,
@@ -185,14 +204,30 @@ export async function forgotPasswordAction(
   const email = String(formData.get('email') ?? '').trim()
   if (!email) return { error: 'Email is required.' }
 
-  const supabase = await createClient()
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback?next=/auth/update-password`,
-  })
+  // Same as registration: generate the recovery link with the admin API and
+  // send it through our own SMTP, bypassing Supabase's rate-limited mailer.
+  const admin = createAdminClient()
+  const { data, error } = await admin.auth.admin.generateLink({ type: 'recovery', email })
 
   // Always return success — don't reveal whether email exists
-  if (error) console.error('resetPasswordForEmail:', error.message)
+  if (error || !data.properties?.hashed_token) {
+    if (error) console.error('[forgotPasswordAction] generateLink:', error.message)
+    return { sent: true }
+  }
+
+  const resetUrl =
+    `${siteUrl}/auth/confirm?token_hash=${encodeURIComponent(data.properties.hashed_token)}` +
+    `&type=recovery&next=${encodeURIComponent('/auth/update-password')}`
+  const sent = await sendPasswordResetEmail(email, resetUrl)
+  if (!sent.ok) {
+    console.error('[forgotPasswordAction] reset email failed:', sent.error)
+    // Last resort: Supabase's built-in mailer
+    const anon = await createClient()
+    await anon.auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteUrl}/auth/callback?next=/auth/update-password`,
+    })
+  }
   return { sent: true }
 }
