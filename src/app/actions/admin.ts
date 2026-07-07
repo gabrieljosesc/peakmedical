@@ -91,15 +91,22 @@ export async function updateOrderAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id'))
   const status = String(formData.get('status'))
   const admin_notes = String(formData.get('admin_notes') || '')
+  const customer_visible_note = String(formData.get('customer_visible_note') || '') || null
 
   // Detect status change to decide whether to email the customer
   const { data: before } = await supabase.from('orders').select('status').eq('id', id).single()
   const previousStatus = before?.status as OrderStatus | undefined
 
-  const { error } = await supabase
+  let { error } = await supabase
     .from('orders')
-    .update({ status, admin_notes })
+    .update({ status, admin_notes, customer_visible_note })
     .eq('id', id)
+
+  // Degrade gracefully if the customer_visible_note column hasn't been added
+  // yet (run supabase/orders-customer-note.sql): still save status/admin_notes.
+  if (error && /customer_visible_note/.test(error.message)) {
+    ;({ error } = await supabase.from('orders').update({ status, admin_notes }).eq('id', id))
+  }
 
   if (error) redirect(`/admin/orders/${id}?error=${encodeURIComponent(error.message)}`)
 

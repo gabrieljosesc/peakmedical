@@ -56,6 +56,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </Link>
       </div>
 
+      {/* Message from the team to the customer */}
+      {(order as { customer_visible_note?: string | null }).customer_visible_note ? (
+        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#1a3a5c]">Message from Peak Medical Wholesale</p>
+          <p className="mt-2 text-sm text-gray-800 whitespace-pre-wrap">
+            {(order as { customer_visible_note?: string | null }).customer_visible_note}
+          </p>
+        </div>
+      ) : null}
+
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-4">
           {/* Items */}

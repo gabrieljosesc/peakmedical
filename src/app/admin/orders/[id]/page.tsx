@@ -232,6 +232,16 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Pro
           <label className="text-xs font-medium text-gray-600">Admin notes (internal — not visible to customer)</label>
           <textarea name="admin_notes" rows={3} defaultValue={order.admin_notes ?? ''} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c]" />
         </div>
+        <div>
+          <label className="text-xs font-medium text-gray-600">Note to customer (visible on their order page)</label>
+          <textarea
+            name="customer_visible_note"
+            rows={3}
+            defaultValue={order.customer_visible_note ?? ''}
+            placeholder="e.g. Your order is being processed, expected dispatch in 2 business days."
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c]"
+          />
+        </div>
         <button type="submit" className="rounded-md bg-[#1a3a5c] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#152f4a]">
           Update Order
         </button>
