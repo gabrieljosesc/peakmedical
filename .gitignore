@@ -42,3 +42,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local data exports (customer contact lists — never commit)
+*.csv
+never-ordered-contacts.csv
+welcome-campaign-report.csv
