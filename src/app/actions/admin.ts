@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { sendOrderStatusEmail, type OrderEmailRow, type OrderStatus } from '@/lib/email/order-emails'
+import { sendOrderStatusEmail, sendPaymentUpdateRequestEmail, type OrderEmailRow, type OrderStatus } from '@/lib/email/order-emails'
 
 // ── Admin guard ─────────────────────────────────────────────────────────────
 async function requireAdmin() {
@@ -290,4 +290,44 @@ export async function sendPasswordResetAction(userId: string): Promise<AdminResu
 
   if (error) return { ok: false, message: error.message }
   return { ok: true, message: `Password reset email sent to ${authUser.user.email}.` }
+}
+
+// ── Request updated payment from the customer ───────────────────────────────
+/**
+ * Flags an order as needing updated payment details and emails the customer a
+ * link to enter a new card for that order. The customer's submission (see
+ * updateOrderPaymentAction) replaces the order's payment_card_snapshot, so the
+ * refreshed card shows on the admin order page as usual.
+ */
+export async function requestPaymentUpdateAction(orderId: string): Promise<AdminResult> {
+  await requireAdmin()
+  const svc = createAdminClient()
+
+  const { data: order } = await svc
+    .from('orders')
+    .select('id, reference_number, email, full_name, status, subtotal')
+    .eq('id', orderId)
+    .single()
+  if (!order) return { ok: false, message: 'Order not found.' }
+
+  const { error: upErr } = await svc
+    .from('orders')
+    .update({ payment_update_requested_at: new Date().toISOString() })
+    .eq('id', orderId)
+  if (upErr) {
+    return {
+      ok: false,
+      message: upErr.message.includes('payment_update_requested_at')
+        ? 'Database migration missing: run supabase/orders-payment-update-request.sql in Supabase first.'
+        : upErr.message,
+    }
+  }
+
+  const emailRes = await sendPaymentUpdateRequestEmail(order as unknown as OrderEmailRow)
+  if (!emailRes.ok) {
+    return { ok: false, message: `Flag set, but the email failed to send: ${emailRes.error}` }
+  }
+
+  revalidatePath(`/admin/orders/${orderId}`)
+  return { ok: true, message: `Payment update email sent to ${order.email}.` }
 }

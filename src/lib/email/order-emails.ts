@@ -157,6 +157,53 @@ export async function sendAdminNewOrderEmail(o: OrderEmailRow): Promise<SendEmai
   })
 }
 
+// ── Payment update flow ─────────────────────────────────────────────────────
+
+/** SITE_EMAIL plus any extra inboxes from ADMIN_NOTIFY_EMAILS (comma-separated). */
+function adminRecipients(): string[] {
+  const extraEmails = (process.env.ADMIN_NOTIFY_EMAILS ?? '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+  return [SITE_EMAIL, ...extraEmails]
+}
+
+/** Sent when the team requests updated payment details for an order (e.g. card declined). */
+export async function sendPaymentUpdateRequestEmail(o: OrderEmailRow): Promise<SendEmailResult> {
+  const name = escapeHtml(o.full_name.trim() || 'there')
+  const updateUrl = `${SITE_URL}/account/orders/${o.id}/update-payment`
+  const body = `<p style="margin:0 0 12px;">Hi ${name},</p>
+    <p style="margin:0 0 12px;"><strong>There was a problem processing the payment card on your order.</strong></p>
+    <p style="margin:0 0 12px;">Please update your payment details so we can continue processing your order.</p>
+    <p style="margin:0 0 16px;"><strong>Reference:</strong> ${escapeHtml(ref(o))}</p>
+    <p style="margin:0 0 4px;">
+      <a href="${updateUrl}" style="display:inline-block;background:#1a3a5c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">Update payment details</a>
+    </p>
+    <p style="margin:16px 0 0;font-size:13px;color:#71717a;">You&apos;ll be asked to sign in, then enter your new card for this order.</p>`
+  return sendTransactionalEmail({
+    to: o.email,
+    subject: `Action needed: update payment for order ${ref(o)}`,
+    html: layout(body),
+    text: `Hi ${o.full_name || 'there'}, there was a problem processing the payment card on your order ${ref(o)}. Please update your payment details: ${updateUrl}`,
+  })
+}
+
+/** Internal alert when a customer submits updated payment details for an order. */
+export async function sendAdminPaymentUpdatedEmail(o: OrderEmailRow): Promise<SendEmailResult> {
+  const adminUrl = `${SITE_URL}/admin/orders/${o.id}`
+  const body = `<p style="margin:0 0 12px;"><strong>Payment updated.</strong></p>
+    <p style="margin:0 0 4px;"><strong>Reference:</strong> ${escapeHtml(ref(o))}</p>
+    <p style="margin:0 0 4px;"><strong>Customer:</strong> ${escapeHtml(o.full_name)} (${escapeHtml(o.email)})</p>
+    <p style="margin:0 0 12px;">The customer submitted new payment card details for this order.</p>
+    <p style="margin:12px 0 0;"><a href="${adminUrl}" style="color:#1a3a5c;">Review order in admin →</a></p>`
+  return sendTransactionalEmail({
+    to: adminRecipients(),
+    subject: `Payment updated — ${ref(o)} · ${o.full_name}`,
+    html: layout(body),
+    text: `Payment updated for order ${ref(o)}. Customer ${o.full_name} (${o.email}) submitted new card details. ${adminUrl}`,
+  })
+}
+
 // ── Customer: status change ─────────────────────────────────────────────────
 const STATUS_COPY: Record<OrderStatus, { subject: string; line: string } | null> = {
   pending_csr: null,

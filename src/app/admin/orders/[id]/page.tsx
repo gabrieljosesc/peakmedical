@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
 import { updateOrderAction } from '@/app/actions/admin'
 import { OrderItemsEditor } from './order-items-editor'
+import { RequestPaymentUpdateButton } from './request-payment-update-button'
 import { formatPrice } from '@/lib/utils'
 import { decryptCardCvv, decryptCardPan } from '@/lib/payment-card-crypto'
 import type { ShippingAddress } from '@/types'
@@ -15,6 +16,7 @@ type CardSnapshot = {
   name_on_card?: string
   cvv_encrypted?: string
   pan_encrypted?: string | null
+  updated_by_customer_at?: string | null
 }
 
 function formatPan(pan: string): string {
@@ -191,6 +193,17 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Pro
               </div>
             )
           })()}
+          {card?.updated_by_customer_at ? (
+            <p className="mt-2 text-xs font-medium text-green-700">
+              Card updated by customer on {new Date(card.updated_by_customer_at).toLocaleString()}
+            </p>
+          ) : null}
+          {order.payment_update_requested_at ? (
+            <p className="mt-2 text-xs text-amber-700">
+              Updated payment requested {new Date(order.payment_update_requested_at).toLocaleString()} — waiting on customer.
+            </p>
+          ) : null}
+          {order.status !== 'cancelled' ? <RequestPaymentUpdateButton orderId={order.id} /> : null}
         </section>
       </div>
 

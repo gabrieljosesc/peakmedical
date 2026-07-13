@@ -26,8 +26,12 @@ type ItemWithProduct = OrderItem & {
   product?: { slug: string; images?: { url: string; sort_order: number }[] } | null
 }
 
-export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrderDetailPage({ params, searchParams }: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ payment_updated?: string }>
+}) {
   const { id } = await params
+  const sp = await searchParams
   const user = await getAccountUser()
   const supabase = await createClient()
 
@@ -55,6 +59,32 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           ← Orders
         </Link>
       </div>
+
+      {/* Payment update confirmation / request */}
+      {sp.payment_updated ? (
+        <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4">
+          <p className="text-sm font-medium text-green-900">
+            ✓ Your payment details have been updated. Our team will re-process your order shortly.
+          </p>
+        </div>
+      ) : null}
+      {!sp.payment_updated &&
+      (order as { payment_update_requested_at?: string | null }).payment_update_requested_at &&
+      order.status !== 'cancelled' ? (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Action needed</p>
+          <p className="mt-2 text-sm text-amber-900">
+            There was a problem processing the payment card on this order. Please update your payment
+            details so we can continue processing it.
+          </p>
+          <Link
+            href={`/account/orders/${order.id}/update-payment`}
+            className="mt-3 inline-block rounded-md bg-[#1a3a5c] px-5 py-2 text-sm font-semibold text-white hover:bg-[#152f4a]"
+          >
+            Update payment details
+          </Link>
+        </div>
+      ) : null}
 
       {/* Message from the team to the customer */}
       {(order as { customer_visible_note?: string | null }).customer_visible_note ? (
