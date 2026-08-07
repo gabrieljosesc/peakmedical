@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Mountains (navy, matching logo #1f3a5c) -->
+  <path d="M4,56 L22,10 L36,33 L44,20 L60,56 Z" fill="#1f3a5c"/>
+  <!-- Snow cap — left (taller) peak -->
+  <path d="M22,10 L27,19 L22,25 L17,19 Z" fill="white" opacity="0.88"/>
+  <!-- Snow cap — right (shorter) peak -->
+  <path d="M44,20 L49,28 L44,34 L39,28 Z" fill="white" opacity="0.88"/>
+</svg>
