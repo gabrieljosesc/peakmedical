@@ -64,6 +64,9 @@ export default async function AdminNewProductPage({ searchParams }: Props) {
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="is_featured" className="accent-[#1a3a5c]" /> Featured
           </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="is_free" className="accent-[#1a3a5c]" /> Free item (shows &ldquo;FREE&rdquo;)
+          </label>
         </div>
         <button type="submit" className="rounded-md bg-[#1a3a5c] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#152f4a]">
           Create Product

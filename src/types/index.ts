@@ -41,6 +41,8 @@ export interface Product {
   review_count: number
   is_active: boolean
   is_featured: boolean
+  /** Complimentary item (e.g. freebie with peptide orders) — shows "FREE" instead of "Contact for price". */
+  is_free?: boolean
   coa_url?: string | null
   coas?: ProductCoa[]
   created_at: string

@@ -80,6 +80,9 @@ export default async function AdminProductEditPage({ params, searchParams }: Pro
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="is_featured" defaultChecked={product.is_featured} className="accent-[#1a3a5c]" /> Featured
           </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="is_free" defaultChecked={product.is_free === true} className="accent-[#1a3a5c]" /> Free item (shows &ldquo;FREE&rdquo;)
+          </label>
         </div>
         <button type="submit" className="rounded-md bg-[#1a3a5c] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#152f4a]">
           Save Changes
