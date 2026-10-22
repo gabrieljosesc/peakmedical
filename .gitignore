@@ -47,3 +47,4 @@ next-env.d.ts
 *.csv
 never-ordered-contacts.csv
 welcome-campaign-report.csv
+scripts/.ddp-notice-*
