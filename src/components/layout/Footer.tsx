@@ -82,7 +82,7 @@ export default function Footer() {
       {/* Link columns */}
       <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
         <div>
-          <h3 className="font-semibold text-sm uppercase tracking-widest mb-4 text-blue-200">Contact</h3>
+          <p className="font-semibold text-sm uppercase tracking-widest mb-4 text-blue-200">Contact</p>
           <div className="space-y-2 text-sm text-white/80">
             <div className="flex items-center gap-2"><Phone className="w-4 h-4 flex-shrink-0" /><span>+1-888-222-0373</span></div>
             <div className="flex items-center gap-2"><Mail className="w-4 h-4 flex-shrink-0" /><a href="mailto:info@peakmedicalwholesale.com" className="hover:text-white transition-colors break-all">info@peakmedicalwholesale.com</a></div>
@@ -91,7 +91,7 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="font-semibold text-sm uppercase tracking-widest mb-4 text-blue-200">Shop</h3>
+          <p className="font-semibold text-sm uppercase tracking-widest mb-4 text-blue-200">Shop</p>
           <ul className="space-y-2">
             {shopLinks.map(link => (
               <li key={link.href}><Link href={link.href} className="text-sm text-white/70 hover:text-white transition-colors">{link.label}</Link></li>
@@ -100,7 +100,7 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="font-semibold text-sm uppercase tracking-widest mb-4 text-blue-200">Account</h3>
+          <p className="font-semibold text-sm uppercase tracking-widest mb-4 text-blue-200">Account</p>
           <ul className="space-y-2">
             {accountLinks.map(link => (
               <li key={link.href}><Link href={link.href} className="text-sm text-white/70 hover:text-white transition-colors">{link.label}</Link></li>
@@ -109,7 +109,7 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="font-semibold text-sm uppercase tracking-widest mb-4 text-blue-200">Information</h3>
+          <p className="font-semibold text-sm uppercase tracking-widest mb-4 text-blue-200">Information</p>
           <ul className="space-y-2">
             {infoLinks.map(link => (
               <li key={link.href}><Link href={link.href} className="text-sm text-white/70 hover:text-white transition-colors">{link.label}</Link></li>
@@ -118,7 +118,7 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="font-semibold text-sm uppercase tracking-widest mb-4 text-blue-200">Policies</h3>
+          <p className="font-semibold text-sm uppercase tracking-widest mb-4 text-blue-200">Policies</p>
           <ul className="space-y-2">
             {policyLinks.map(link => (
               <li key={link.href}><Link href={link.href} className="text-sm text-white/70 hover:text-white transition-colors">{link.label}</Link></li>
@@ -130,7 +130,7 @@ export default function Footer() {
       {/* Accepted payment methods */}
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <h3 className="text-lg font-semibold mb-4">Accepted Payment Methods</h3>
+          <p className="text-lg font-semibold mb-4">Accepted Payment Methods</p>
           <PaymentBadges />
           <p className="mt-4 text-sm text-white/70">
             *Apple/Google Pay access is provided by your account manager.

@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
-import { preload } from 'react-dom'
 import { Award, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
@@ -56,9 +55,6 @@ export default function HeroSlideshow() {
   // element) is painted immediately; only slide changes animate.
   const [animate, setAnimate] = useState(false)
 
-  // Hint the browser to fetch the hero background before CSS is parsed.
-  preload('/hero-bg.svg', { as: 'image' })
-
   const go = useCallback((next: number) => {
     setAnimate(true)
     setIndex((next + SLIDES.length) % SLIDES.length)
@@ -74,8 +70,7 @@ export default function HeroSlideshow() {
 
   return (
     <section
-      className="relative overflow-hidden bg-[#1a3a5c] bg-cover bg-center"
-      style={{ backgroundImage: 'url(/hero-bg.svg)' }}
+      className="pmw-hero-bg relative overflow-hidden bg-[#1a3a5c] bg-cover bg-center"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
