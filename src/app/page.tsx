@@ -14,8 +14,13 @@ import {
   ShieldCheck, Truck, HeadphonesIcon, Award, Gift, Wallet,
   Star,
 } from 'lucide-react'
+import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+}
 
 const CAT_COLORS = [
   'from-pink-50 to-pink-100/40', 'from-purple-50 to-purple-100/40',
@@ -68,7 +73,7 @@ export default async function HomePage() {
                 <Icon className="w-5 h-5 text-[#1a3a5c]" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800 text-sm">{title}</h3>
+                <p className="font-semibold text-gray-800 text-sm">{title}</p>
                 <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
               </div>
             </div>
@@ -137,7 +142,7 @@ export default async function HomePage() {
             <p className="text-white/90 mb-6 max-w-md">
               Invite fellow medical professionals to Peak Medical Wholesale and you both receive a reward on your next purchase.
             </p>
-            <Link href="/referral" className={cn(buttonVariants(), 'bg-white text-[#e63946] hover:bg-gray-100 font-semibold')}>
+            <Link href="/referral" className={cn(buttonVariants(), 'bg-white text-[#c42d3a] hover:bg-gray-100 font-semibold')}>
               Know More About Our Referral Program
             </Link>
           </div>
@@ -169,7 +174,7 @@ export default async function HomePage() {
                     )}
                   </div>
                   <div className="p-5">
-                    <p className="text-xs text-gray-400 mb-2">
+                    <p className="text-xs text-gray-500 mb-2">
                       {post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}
                     </p>
                     <h3 className="font-semibold text-gray-800 group-hover:text-[#1a3a5c] leading-snug mb-2">{post.title}</h3>

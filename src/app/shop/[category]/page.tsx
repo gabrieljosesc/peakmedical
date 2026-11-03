@@ -7,6 +7,8 @@ import Pagination from '@/components/products/Pagination'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import type { Metadata } from 'next'
+import { JsonLd } from '@/components/seo/JsonLd'
+import { breadcrumbJsonLd, metaDescription } from '@/lib/site'
 
 const PAGE_SIZE = 20
 
@@ -18,9 +20,19 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { category } = await params
   const supabase = createAdminClient()
-  const { data } = await supabase.from('categories').select('name').eq('slug', category).single()
+  const { data } = await supabase.from('categories').select('name, description').eq('slug', category).single()
   if (!data) return {}
-  return { title: `${data.name} | Peak Medical Wholesale` }
+  const description = metaDescription(
+    data.description
+      ? `${data.description} Shop ${data.name} at wholesale prices from Peak Medical Wholesale — authentic products for licensed professionals, cold-chain shipped.`
+      : `Buy ${data.name} wholesale from Peak Medical Wholesale. Authentic products sourced from original manufacturers, cold-chain shipped to licensed clinics and practices since 2012.`
+  )
+  return {
+    title: `${data.name} Wholesale`,
+    description,
+    alternates: { canonical: `/shop/${category}` },
+    openGraph: { title: `${data.name} Wholesale | Peak Medical Wholesale`, description, url: `/shop/${category}` },
+  }
 }
 
 export default async function CategoryPage({ params, searchParams }: Props) {
@@ -67,8 +79,13 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <JsonLd data={breadcrumbJsonLd([
+        { name: 'Home', path: '/' },
+        { name: 'Shop', path: '/shop' },
+        { name: category.name, path: `/shop/${slug}` },
+      ])} />
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-gray-500 mb-6">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-gray-500 mb-6">
         <Link href="/" className="hover:text-[#1a3a5c]">Home</Link>
         <ChevronRight className="w-3.5 h-3.5" />
         <Link href="/shop" className="hover:text-[#1a3a5c]">Shop</Link>
@@ -81,7 +98,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         {category.description && (
           <p className="text-sm text-gray-500 mt-1">{category.description}</p>
         )}
-        <p className="text-sm text-gray-400 mt-1">{count ?? 0} products</p>
+        <p className="text-sm text-gray-500 mt-1">{count ?? 0} products</p>
       </div>
 
       {/* Subcategory pills */}

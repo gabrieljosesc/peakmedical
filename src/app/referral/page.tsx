@@ -4,7 +4,11 @@ import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Gift, Wallet, Users, BadgeCheck } from 'lucide-react'
 
-export const metadata: Metadata = { title: 'Referral & Rewards' }
+export const metadata: Metadata = {
+  title: 'Referral & Rewards Program',
+  description: 'Refer a fellow licensed medical professional to Peak Medical Wholesale and you both earn a reward on your next order. Plus cash back on every purchase.',
+  alternates: { canonical: '/referral' },
+}
 
 const steps = [
   { icon: Users, title: 'Invite a Colleague', desc: 'Share Peak Medical Wholesale with fellow licensed medical professionals.' },

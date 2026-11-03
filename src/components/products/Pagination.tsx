@@ -35,6 +35,7 @@ export default function Pagination({ currentPage, totalPages }: Props) {
         size="icon"
         onClick={() => goToPage(currentPage - 1)}
         disabled={currentPage === 1}
+        aria-label="Previous page"
         className="h-9 w-9"
       >
         <ChevronLeft className="w-4 h-4" />
@@ -73,6 +74,7 @@ export default function Pagination({ currentPage, totalPages }: Props) {
         size="icon"
         onClick={() => goToPage(currentPage + 1)}
         disabled={currentPage === totalPages}
+        aria-label="Next page"
         className="h-9 w-9"
       >
         <ChevronRight className="w-4 h-4" />

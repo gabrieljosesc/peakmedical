@@ -5,7 +5,11 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { blogImage } from '@/lib/blog-images'
 import { Award } from 'lucide-react'
 
-export const metadata: Metadata = { title: 'Blog' }
+export const metadata: Metadata = {
+  title: 'Blog — Medical News & Product Guides',
+  description: 'Updates on aesthetic medicine, injectables, orthopedic treatments and research peptides from the Peak Medical Wholesale team.',
+  alternates: { canonical: '/blog' },
+}
 export const dynamic = 'force-dynamic'
 
 export default async function BlogPage() {

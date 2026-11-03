@@ -75,6 +75,8 @@ export default function ProductDetail({ product, doseOptions = [] }: { product: 
                 <button
                   key={img.id}
                   onClick={() => setActiveImg(i)}
+                  aria-label={`View image ${i + 1} of ${images.length}`}
+                  aria-current={activeImg === i}
                   className={`relative w-16 h-16 rounded-lg border-2 overflow-hidden flex-shrink-0 ${
                     activeImg === i ? 'border-[#1a3a5c]' : 'border-gray-200'
                   }`}
@@ -135,7 +137,7 @@ export default function ProductDetail({ product, doseOptions = [] }: { product: 
             ) : showPrice ? (
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-gray-900">{formatPrice(unitPrice)}</span>
-                <span className="text-sm text-gray-400">/ unit</span>
+                <span className="text-sm text-gray-500">/ unit</span>
               </div>
             ) : (
               <span className="text-xl text-gray-500 italic">Contact us for pricing</span>
@@ -178,13 +180,15 @@ export default function ProductDetail({ product, doseOptions = [] }: { product: 
                 <div className="flex items-center border rounded-md">
                   <button
                     onClick={() => setQty(q => Math.max(1, q - 1))}
+                    aria-label="Decrease quantity"
                     className="px-3 py-2 hover:bg-gray-50 transition-colors"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="px-4 py-2 text-sm font-medium min-w-[3rem] text-center">{qty}</span>
+                  <span className="px-4 py-2 text-sm font-medium min-w-[3rem] text-center" aria-live="polite">{qty}</span>
                   <button
                     onClick={() => setQty(q => q + 1)}
+                    aria-label="Increase quantity"
                     className="px-3 py-2 hover:bg-gray-50 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
@@ -218,7 +222,7 @@ export default function ProductDetail({ product, doseOptions = [] }: { product: 
           )}
 
           {product.sku && (
-            <p className="text-xs text-gray-400 mb-4">SKU: {product.sku}</p>
+            <p className="text-xs text-gray-500 mb-4">SKU: {product.sku}</p>
           )}
 
           <div className="mt-4 bg-blue-50 rounded-lg p-4 text-sm text-gray-600 space-y-1">
@@ -229,7 +233,7 @@ export default function ProductDetail({ product, doseOptions = [] }: { product: 
 
           {product.coas && product.coas.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-base font-bold text-gray-900">Certificate of Analysis</h3>
+              <h2 className="text-base font-bold text-gray-900">Certificate of Analysis</h2>
               <p className="mt-1 text-sm text-gray-500">
                 Third-party lab reports (opens in a new tab).
               </p>

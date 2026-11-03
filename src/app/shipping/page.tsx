@@ -1,7 +1,11 @@
 import type { Metadata } from 'next'
 import { Truck, ThermometerSnowflake, ShieldCheck } from 'lucide-react'
 
-export const metadata: Metadata = { title: 'Shipping Policy' }
+export const metadata: Metadata = {
+  title: 'Shipping Policy — Free Shipping Over $800',
+  description: 'Peak Medical Wholesale shipping: first order ships free, then free on orders $800+, $50 on $500–$800, $100 under $500. Validated cold-chain packaging for temperature-sensitive products.',
+  alternates: { canonical: '/shipping' },
+}
 
 export default function ShippingPage() {
   return (

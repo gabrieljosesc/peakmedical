@@ -10,7 +10,7 @@ import { Search as SearchIcon } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Search' }
+export const metadata: Metadata = { title: 'Search', robots: { index: false, follow: true } }
 
 const PAGE_SIZE = 20
 

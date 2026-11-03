@@ -2,6 +2,9 @@ import { CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Order Confirmed', robots: { index: false } }
 
 export default async function OrderConfirmedPage({
   searchParams,

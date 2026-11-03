@@ -5,13 +5,16 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { ShoppingCart, Heart, User, Search, Menu, Phone, ChevronDown, X } from 'lucide-react'
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { useCart } from '@/hooks/useCart'
 import { useWishlist } from '@/hooks/useWishlist'
 import { cn, formatPrice } from '@/lib/utils'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import SearchBar from '@/components/products/SearchBar'
 import { logoutAction } from '@/app/actions/auth'
+
+// Only loaded when the search drawer is opened — keeps it out of the shared bundle.
+const SearchBar = dynamic(() => import('@/components/products/SearchBar'), { ssr: false })
 
 interface Category {
   id: string
@@ -164,7 +167,7 @@ export default function Navbar({ user, categories, navSamples = [], isAdmin, dis
             {searchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
           </button>
 
-          <Link href="/wishlist" className="relative hidden sm:inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
+          <Link href="/wishlist" aria-label={`Wishlist, ${wishCount} items`} className="relative hidden sm:inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
             <Heart className="w-5 h-5" />
             {wishCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-[#e63946] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
@@ -176,14 +179,14 @@ export default function Navbar({ user, categories, navSamples = [], isAdmin, dis
           <DropdownMenu>
             <DropdownMenuTrigger render={
               user ? (
-                <button className="inline-flex items-center gap-2 rounded-lg px-2 h-9 hover:bg-muted transition-colors">
+                <button aria-label="Account menu" className="inline-flex items-center gap-2 rounded-lg px-2 h-9 hover:bg-muted transition-colors">
                   <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[#1a3a5c] text-white text-xs font-semibold flex-shrink-0">
                     {(displayName ?? '?').slice(0, 1).toUpperCase()}
                   </span>
                   <span className="hidden sm:block max-w-[120px] truncate text-sm font-medium text-gray-700">{displayName}</span>
                 </button>
               ) : (
-                <button className="inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
+                <button aria-label="Account menu" className="inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
                   <User className="w-5 h-5" />
                 </button>
               )
@@ -205,7 +208,7 @@ export default function Navbar({ user, categories, navSamples = [], isAdmin, dis
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link href="/cart" className="relative inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
+          <Link href="/cart" aria-label={`Cart, ${count} items`} className="relative inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
             <ShoppingCart className="w-5 h-5" />
             {count > 0 && (
               <span className="absolute -top-1 -right-1 bg-[#e63946] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
@@ -216,7 +219,7 @@ export default function Navbar({ user, categories, navSamples = [], isAdmin, dis
 
           {/* Mobile menu */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger className="lg:hidden inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
+            <SheetTrigger aria-label="Open menu" className="lg:hidden inline-flex items-center justify-center size-9 rounded-lg hover:bg-muted transition-colors">
               <Menu className="w-5 h-5" />
             </SheetTrigger>
             <SheetContent side="left" className="w-72 overflow-y-auto">

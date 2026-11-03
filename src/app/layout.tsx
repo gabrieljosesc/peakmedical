@@ -11,23 +11,32 @@ import NavigationProgress from '@/components/layout/NavigationProgress'
 import { FloatingCart } from '@/components/FloatingCart'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/auth'
+import { GoogleAnalytics } from '@next/third-parties/google'
+import { JsonLd } from '@/components/seo/JsonLd'
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, organizationJsonLd, websiteJsonLd } from '@/lib/site'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'Peak Medical Wholesale — Medical Supplies for Professionals',
     template: '%s | Peak Medical Wholesale',
   },
-  description:
-    'International medical supplier specializing in aesthetic injectables, dermal fillers, botulinum toxins, orthopedic, and more. Serving licensed professionals since 2012.',
+  description: SITE_DESCRIPTION,
   keywords: ['medical wholesale', 'dermal fillers', 'botox', 'medical supplies', 'aesthetic products'],
+  applicationName: SITE_NAME,
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: process.env.NEXT_PUBLIC_SITE_URL,
-    siteName: 'Peak Medical Wholesale',
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    images: [{ url: '/logo.svg', alt: SITE_NAME }],
   },
+  twitter: { card: 'summary' },
+  robots: { index: true, follow: true },
+  // Search Console "HTML tag" verification — set GOOGLE_SITE_VERIFICATION in Vercel env.
+  verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
 }
 
 export const dynamic = 'force-dynamic'
@@ -81,6 +90,8 @@ export default async function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className={`${inter.className} min-h-full flex flex-col bg-gray-50`}>
+        <JsonLd data={[organizationJsonLd, websiteJsonLd]} />
+        {process.env.NEXT_PUBLIC_GA_ID && <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />}
         <CartProvider>
           <WishlistProvider>
             <Suspense fallback={null}>

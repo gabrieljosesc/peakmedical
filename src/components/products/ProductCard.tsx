@@ -53,7 +53,7 @@ export default function ProductCard({ product }: Props) {
             </div>
           )}
           {isFree && (
-            <span className="absolute top-2 left-2 rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm">
+            <span className="absolute top-2 left-2 rounded-full bg-green-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm">
               Free
             </span>
           )}
@@ -69,9 +69,9 @@ export default function ProductCard({ product }: Props) {
 
         {/* Info */}
         <div className="p-3">
-          <h3 className="text-sm font-medium text-gray-800 line-clamp-2 leading-snug mb-2 group-hover:text-[#1a3a5c] transition-colors">
+          <p className="text-sm font-medium text-gray-800 line-clamp-2 leading-snug mb-2 group-hover:text-[#1a3a5c] transition-colors">
             {product.title}
-          </h3>
+          </p>
           <div className="flex items-center justify-between">
             <div>
               {isFree ? (
@@ -79,7 +79,7 @@ export default function ProductCard({ product }: Props) {
               ) : showPrice ? (
                 <span className="text-base font-bold text-gray-800">{formatPrice(product.base_price)}</span>
               ) : (
-                <span className="text-sm text-gray-400 italic">Contact for price</span>
+                <span className="text-sm text-gray-500 italic">Contact for price</span>
               )}
             </div>
             {showPrice && (

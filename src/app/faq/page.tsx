@@ -1,6 +1,11 @@
 import type { Metadata } from 'next'
+import { JsonLd } from '@/components/seo/JsonLd'
 
-export const metadata: Metadata = { title: 'FAQ' }
+export const metadata: Metadata = {
+  title: 'FAQ — Ordering, Shipping & Authenticity',
+  description: 'Answers to common questions about ordering from Peak Medical Wholesale: who can buy, how payment works, free shipping thresholds, cold-chain handling and product authenticity.',
+  alternates: { canonical: '/faq' },
+}
 
 const faqs = [
   { q: 'Who can order from Peak Medical Wholesale?', a: 'We supply licensed medical professionals, clinics, spas, and hospitals only. A valid professional license is required during registration.' },
@@ -14,6 +19,15 @@ const faqs = [
 export default function FAQPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqs.map(f => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      }} />
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Frequently Asked Questions</h1>
       <p className="text-gray-500 mb-8">Everything you need to know about ordering with us.</p>
       <div className="space-y-4">

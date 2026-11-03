@@ -92,8 +92,10 @@ export default function HighlightSlides() {
               onClick={() => setIndex(i)}
               aria-label={`Highlight ${i + 1}`}
               aria-current={i === index}
-              className={cn('h-2 rounded-full transition-all', i === index ? 'w-8 bg-white' : 'w-2 bg-white/40 hover:bg-white/70')}
-            />
+              className="group flex h-6 min-w-6 items-center justify-center"
+            >
+              <span className={cn('block h-2 rounded-full transition-all', i === index ? 'w-8 bg-white' : 'w-2 bg-white/40 group-hover:bg-white/70')} />
+            </button>
           ))}
         </div>
       </div>

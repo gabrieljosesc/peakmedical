@@ -10,8 +10,9 @@ import { FlaskConical, FileCheck2, Truck, ShieldCheck, ArrowRight } from 'lucide
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Research Peptides',
-  description: 'High-purity research peptides with third-party certificates of analysis. For research use only.',
+  title: 'Research Peptides Wholesale — Third-Party Tested',
+  description: 'Buy high-purity research peptides wholesale with a third-party certificate of analysis on every product. Multiple doses, fast tracked shipping. For research use only.',
+  alternates: { canonical: '/peptides' },
 }
 
 const FEATURES = [

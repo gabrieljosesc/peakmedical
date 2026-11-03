@@ -89,7 +89,7 @@ export async function ProductReviews({ productId, slug }: { productId: string; s
         {/* List */}
         <div className="space-y-4">
           {reviews.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-200 bg-white px-6 py-12 text-center text-sm text-gray-400">
+            <div className="rounded-xl border border-dashed border-gray-200 bg-white px-6 py-12 text-center text-sm text-gray-500">
               No reviews yet. Be the first to share your experience.
             </div>
           ) : (
@@ -100,7 +100,7 @@ export async function ProductReviews({ productId, slug }: { productId: string; s
                     <Stars value={r.rating} className="w-3.5 h-3.5" />
                     {r.title && <span className="font-semibold text-sm text-gray-900">{r.title}</span>}
                   </div>
-                  <time className="text-xs text-gray-400">
+                  <time className="text-xs text-gray-500">
                     {new Date(r.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                   </time>
                 </div>

@@ -145,7 +145,7 @@ export default function Footer() {
       {/* Disclaimer */}
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <p className="text-[11px] leading-relaxed text-white/40">
+          <p className="text-[11px] leading-relaxed text-white/70">
             Information on Peak Medical Wholesale is provided for informational purposes only and may
             not cover all precautions, side effects, and other information about any given product. All
             brand names and product images belong to their respective owners; Peak Medical Wholesale is
@@ -157,7 +157,7 @@ export default function Footer() {
 
       {/* Copyright */}
       <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-white/50">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-white/70">
           <p>© {new Date().getFullYear()} Peak Medical Wholesale. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <Link href="/legal/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>

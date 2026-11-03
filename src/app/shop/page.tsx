@@ -5,6 +5,13 @@ import ProductCard from '@/components/products/ProductCard'
 import ShopFilters from '@/components/products/ShopFilters'
 import ShopSort from '@/components/products/ShopSort'
 import Pagination from '@/components/products/Pagination'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Shop All Products — Wholesale Medical Supplies',
+  description: 'Browse 400+ wholesale medical products: dermal fillers, botulinum toxins, orthopedic injectables, mesotherapy, research peptides and more. Authentic, cold-chain shipped, for licensed professionals.',
+  alternates: { canonical: '/shop' },
+}
 
 const PAGE_SIZE = 20
 

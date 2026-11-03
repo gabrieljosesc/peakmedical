@@ -1,16 +1,16 @@
 import Link from 'next/link'
 import type { HomeBrand } from '@/lib/home-brands'
 
-function BrandCard({ brand }: { brand: HomeBrand }) {
+function BrandCard({ brand, decorative = false }: { brand: HomeBrand; decorative?: boolean }) {
   return (
     <Link
       href={brand.href}
       className="flex w-[180px] shrink-0 flex-col items-center rounded-2xl border border-gray-100 bg-white px-4 py-5 shadow-sm transition hover:border-[#1a3a5c]/40 hover:shadow-md"
-      aria-label={`${brand.name} — ${brand.count} products`}
+      tabIndex={decorative ? -1 : undefined}
     >
       <span className="text-lg font-bold tracking-tight text-[#1a3a5c]">{brand.name}</span>
       <span className="mt-2 text-[11px] leading-snug text-gray-500">
-        <span className="font-semibold text-[#e63946]">{brand.count}</span>{' '}
+        <span className="font-semibold text-[#c42d3a]">{brand.count}</span>{' '}
         {brand.count === 1 ? 'product' : 'products'}
       </span>
     </Link>
@@ -24,7 +24,7 @@ export default function BrandMarquee({ brands }: { brands: HomeBrand[] }) {
   return (
     <section className="border-y bg-gradient-to-b from-gray-50 to-white py-10" aria-label="Brands we carry">
       <div className="text-center mb-6 px-4">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400">Trusted Brands We Carry</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-500">Trusted Brands We Carry</h2>
       </div>
       <div className="pmw-marquee-wrap relative overflow-hidden">
         {/* edge fades */}
@@ -35,7 +35,7 @@ export default function BrandMarquee({ brands }: { brands: HomeBrand[] }) {
             {brands.map(b => <BrandCard key={b.name} brand={b} />)}
           </div>
           <div className="flex shrink-0 gap-4 pr-4" aria-hidden>
-            {brands.map(b => <BrandCard key={`dup-${b.name}`} brand={b} />)}
+            {brands.map(b => <BrandCard key={`dup-${b.name}`} brand={b} decorative />)}
           </div>
         </div>
       </div>

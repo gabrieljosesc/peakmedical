@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 export const metadata = {
   title: 'About Us',
   description: 'Learn about Peak Medical Wholesale — an international medical supplier serving professionals since 2012.',
+  alternates: { canonical: '/about' },
 }
 
 export default function AboutPage() {

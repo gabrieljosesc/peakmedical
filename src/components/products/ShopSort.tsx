@@ -25,7 +25,7 @@ export default function ShopSort({ currentSort }: { currentSort: string }) {
 
   return (
     <Select value={currentSort} onValueChange={handleSort}>
-      <SelectTrigger className="w-44 h-9 text-sm">
+      <SelectTrigger className="w-44 h-9 text-sm" aria-label="Sort products">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

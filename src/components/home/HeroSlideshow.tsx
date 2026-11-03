@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
+import { preload } from 'react-dom'
 import { Award, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
@@ -51,14 +52,21 @@ const INTERVAL = 6500
 export default function HeroSlideshow() {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
+  // The first slide renders without the fade-in so the headline (our LCP
+  // element) is painted immediately; only slide changes animate.
+  const [animate, setAnimate] = useState(false)
+
+  // Hint the browser to fetch the hero background before CSS is parsed.
+  preload('/hero-bg.svg', { as: 'image' })
 
   const go = useCallback((next: number) => {
+    setAnimate(true)
     setIndex((next + SLIDES.length) % SLIDES.length)
   }, [])
 
   useEffect(() => {
     if (paused) return
-    const t = setInterval(() => setIndex(i => (i + 1) % SLIDES.length), INTERVAL)
+    const t = setInterval(() => { setAnimate(true); setIndex(i => (i + 1) % SLIDES.length) }, INTERVAL)
     return () => clearInterval(t)
   }, [paused])
 
@@ -75,7 +83,7 @@ export default function HeroSlideshow() {
       <div className={cn('absolute inset-0 bg-gradient-to-r transition-colors duration-700', slide.gradient)} />
 
       <div className="relative max-w-7xl mx-auto px-4 py-20 lg:py-28">
-        <div key={index} className="pmw-slide-enter max-w-2xl text-white">
+        <div key={index} className={cn('max-w-2xl text-white', animate && 'pmw-slide-enter')}>
           <p className="inline-flex items-center gap-2 text-blue-200 text-xs font-semibold tracking-widest uppercase mb-4 bg-white/10 rounded-full px-3 py-1">
             <Award className="w-3.5 h-3.5" /> {slide.eyebrow}
           </p>
@@ -111,11 +119,13 @@ export default function HeroSlideshow() {
                 onClick={() => go(i)}
                 aria-label={`Go to slide ${i + 1}`}
                 aria-current={i === index}
-                className={cn(
-                  'h-2 rounded-full transition-all',
-                  i === index ? 'w-8 bg-white' : 'w-2 bg-white/40 hover:bg-white/70'
-                )}
-              />
+                className="group flex h-6 min-w-6 items-center justify-center"
+              >
+                <span className={cn(
+                  'block h-2 rounded-full transition-all',
+                  i === index ? 'w-8 bg-white' : 'w-2 bg-white/40 group-hover:bg-white/70'
+                )} />
+              </button>
             ))}
           </div>
           <div className="ml-auto flex gap-2">
