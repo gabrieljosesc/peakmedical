@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Award, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
+import HeroBackdrop from './HeroBackdrop'
 
 type Slide = {
   eyebrow: string
@@ -70,11 +71,12 @@ export default function HeroSlideshow() {
 
   return (
     <section
-      className="pmw-hero-bg relative overflow-hidden bg-[#1a3a5c] bg-cover bg-center"
+      className="relative overflow-hidden bg-[#1a3a5c]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
     >
+      <HeroBackdrop />
       <div className={cn('absolute inset-0 bg-gradient-to-r transition-colors duration-700', slide.gradient)} />
 
       <div className="relative max-w-7xl mx-auto px-4 py-20 lg:py-28">
