@@ -27,8 +27,11 @@ const ROOTS = {
   peak: path.join(__dirname, ".."),
   ace: path.join(__dirname, "..", "..", "acemedical"),
   mp: path.join(__dirname, "..", "..", "medicaplanet", "web"),
+  drs: path.join(__dirname, "..", "..", "drsalesdirect"),
 };
-if (!ROOTS[SITE]) { console.error("usage: --site=peak|ace|mp"); process.exit(1); }
+if (!ROOTS[SITE]) { console.error("usage: --site=peak|ace|mp|drs"); process.exit(1); }
+// drsalesdirect already had an EYLEA HD row under this slug — update it in place rather than duplicating.
+const HD_SLUG = SITE === "drs" ? "eylea-hd" : "eylea-hd-8mg";
 dotenv.config({ path: path.join(ROOTS[SITE], ".env.local"), quiet: true });
 
 const IMAGE = path.join(__dirname, "..", "..", "_shared-assets", "eylea-hd", "eylea-hd.webp");
@@ -48,7 +51,7 @@ const PRICING = {
 const ONLY = typeof args.only === "string" ? args.only.toLowerCase() : null;
 
 const HD = {
-  slug: "eylea-hd-8mg",
+  slug: HD_SLUG,
   title: "EYLEA® HD 8MG (0.07ML) PREFILLED SYRINGE",
   sku: "EYLEA-HD-8MG",
   description:
@@ -110,11 +113,11 @@ async function main() {
     return;
   }
 
-  // peak / mp: products + product_images table
-  const extra = SITE === "mp" ? { fda_approved: true, ce_marked: true } : {};
+  // peak / mp / drs: products + product_images table
+  const extra = SITE === "mp" ? { fda_approved: false, ce_marked: false } : {}; // matches the sibling Eylea rows there
   const { data, error } = await s.from("products").upsert({ ...common, currency: "USD", is_active: true, is_featured: false, is_free: false, ...extra }, { onConflict: "slug" }).select("id").single();
   if (error) throw error;
-  const objectPath = SITE === "mp" ? `${HD.slug}/hero.webp` : `${data.id}/0.webp`;
+  const objectPath = SITE === "mp" ? `${HD.slug}/hero.webp` : SITE === "drs" ? `hd/eylea-hd-8mg.webp` : `${data.id}/0.webp`;
   const up = await s.storage.from("product-images").upload(objectPath, img, { contentType: "image/webp", upsert: true });
   if (up.error) throw new Error("image upload: " + up.error.message);
   const url = s.storage.from("product-images").getPublicUrl(objectPath).data.publicUrl;
