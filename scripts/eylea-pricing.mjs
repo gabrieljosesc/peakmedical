@@ -42,8 +42,10 @@ const tiers = (a, b, c) => [
 const PRICING = {
   eylea: tiers(1099, 1049, 999),
   eyleaHd: tiers(1499, 1399, 1349),
-  vabysmo: tiers(2499, 2399, 2299),
+  vabysmo: tiers(1949, 1899, 1849), // updated 26 Nov 2026 (was 2499/2399/2299)
 };
+// --only=<slug substring>: re-tier just the matching products and skip the EYLEA HD upsert.
+const ONLY = typeof args.only === "string" ? args.only.toLowerCase() : null;
 
 const HD = {
   slug: "eylea-hd-8mg",
@@ -73,6 +75,7 @@ async function main() {
   const { data: rows } = await s.from("products").select(`id, slug, ${nameCol}, ${priceCol}, price_tiers`)
     .or("slug.ilike.%eylea%,slug.ilike.%vabysmo%");
   for (const p of rows ?? []) {
+    if (ONLY && !p.slug.includes(ONLY)) continue;
     const isHd = /eylea-hd|eylea.*hd/i.test(p.slug) || /HD/.test(p[nameCol]);
     const t = p.slug.includes("vabysmo") ? PRICING.vabysmo : isHd ? PRICING.eyleaHd : PRICING.eylea;
     const before = `${p[priceCol]} ${JSON.stringify((p.price_tiers ?? []).map(x => x.price))}`;
@@ -83,6 +86,7 @@ async function main() {
   }
 
   // ── 2. Upsert EYLEA HD ──────────────────────────────────────────────────
+  if (ONLY) return;
   const { data: cat } = await s.from("categories").select("id").eq("slug", "ophthalmology").single();
   if (!cat) throw new Error("ophthalmology category not found");
   const existing = (rows ?? []).find(p => p.slug === HD.slug);
